@@ -1,0 +1,51 @@
+### --- Python & Environment (uv / venv) ---
+# uvが生成する仮想環境の実体
+.venv/
+# コンパイル済みのキャッシュ
+__pycache__/
+*.py[cod]
+*$py.class
+# 依存関係のロックファイル（プラットフォーム間で競合する場合のみ除外検討だが、基本は管理対象）
+# uv.lock は通常Git管理に含めるが、共有環境でOSが異なる場合はuvが適切に処理するため含めて良い
+
+### --- Donkey Car / Learning Data (重要) ---
+# 走行中に生成される大量の画像データ (*.jpg) を除外
+
+data
+output
+sample
+
+*.jpg
+*.json
+*.png
+*.csv
+
+# 学習済みモデル（H5, TFLite等）
+# モデルはサイズが大きいため、基本は除外。必要な場合のみ個別に管理。
+*.h5
+*.tflite
+*.keras
+*.onnx
+
+# ログファイルとテンポラリファイル
+*.log
+**/logs/
+**/temp/
+
+### --- OS Specific (macOS / Linux 混在対策) ---
+# macOS特有のメタデータ（ホストPCがMacのため必須）
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux特有
+.fuse_hidden*
+.directory
+.Trash-*
+
+### --- Development Tools ---
+# VS Codeの設定（共有ラズパイで他者に見せないため）
+.vscode/
+# ローカルの環境変数定義ファイル
+.env
