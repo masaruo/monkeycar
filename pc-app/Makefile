@@ -20,7 +20,7 @@ fclean: clean
 	rm -rf .venv uv.lock
 
 clean-data:
-	rm -rf ./data ./output
+	rm -rf ./data ./output ./model
 
 pull:
 	./sync.sh pull
