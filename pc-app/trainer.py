@@ -5,7 +5,6 @@ import tensorflow as tf
 import json
 from pathlib import Path
 from model import CarModel
-from loader import Loader
 from shared.models import ModelConfig
 
 logger = logging.getLogger(__name__)

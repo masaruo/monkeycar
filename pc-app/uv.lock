@@ -1749,6 +1749,12 @@ dependencies = [
 [package.metadata]
 requires-dist = [{ name = "pydantic", specifier = ">=2.12.5" }]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.19.1" },
+    { name = "ruff", specifier = ">=0.14.11" },
+]
+
 [[package]]
 name = "six"
 version = "1.17.0"

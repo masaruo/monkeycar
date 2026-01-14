@@ -26,3 +26,15 @@ dev = [
     "pytest-cov>=7.0.0",
     "ruff>=0.14.11",
 ]
+
+[tool.ruff]
+exclude = [
+    "tests/*",
+    "sample/*",
+]
+
+[tool.mypy]
+exclude = [
+    "tests/",
+    "sample/",
+]
