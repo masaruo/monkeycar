@@ -39,3 +39,9 @@ fclean: clean
 
 delete:
 	rm -rf ./data
+
+pull:
+	./sync.sh pull
+
+push:
+	./sync.sh push

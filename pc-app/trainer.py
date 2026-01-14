@@ -5,6 +5,7 @@ import tensorflow as tf
 import json
 from model import CarModel
 from loader import Loader
+from shared.models import ModelConfig
 
 logger = logging.getLogger(__name__)
 
@@ -164,5 +165,4 @@ def main() -> None:
         raise
 
 if __name__ == '__main__':
-    main()_ == '__main__':
     main()

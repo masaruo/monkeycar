@@ -1,3 +1,18 @@
+    image_size: tuple[int, int] = Field(..., description="[Width, Height]")
+    image_shape: List[int] = Field(description="[Height,  Width, Channels]")
+    
+    # 制御値の正規化用
+    steering_min: float = Field(..., ge=-1.0, le=1.0)
+    steering_max: float = Field(..., ge=-1.0, le=1.0)
+    throttle_min: float = Field(..., ge=-1.0, le=1.0)
+    throttle_max: float = Field(..., ge=-1.0, le=1.0)
+    normalize_param: float
+    # 訓練メタデータ (Optional)
+    num_samples: int
+    epochs_trained: int
+    final_loss: float
+    final_val_loss: float
+
 # PC用訓練パイプライン
 
 ホストPC上で行う機械学習訓練スクリプトです。Donkeycar方式と同様です。
