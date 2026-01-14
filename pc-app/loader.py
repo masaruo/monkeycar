@@ -3,9 +3,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 import pandas as pd
-# from shared.models import ModelConfig
-
-
+from shared.models import ModelConfig
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +23,13 @@ class Loader:
         """
         self.data_dir = Path(data_dir).resolve()
         self.image_size = image_size
-        self.normalize_param = 255.0
+        self.norm_divisor = 255.0
 
         self.images = []
         self.steerings = []
         self.throttles = []
-        self.config = ModelConfig()
 
-    def load_sessions(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def load_sessions(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, ModelConfig | None]:
         """全セッションからデータを読み込む"""
         # session_ で始まるディレクトリを取得（名前順でソート）
         session_dirs = sorted([
@@ -42,7 +39,7 @@ class Loader:
 
         if not session_dirs:
             logger.warning(f"{self.data_dir} 内に session_ で始まるフォルダが見つかりません")
-            return np.array([]), np.array([]), np.array([])
+            return np.array([]), np.array([]), np.array([]), None
 
         logger.info(f"見つかったセッション数: {len(session_dirs)}")
 
@@ -52,10 +49,14 @@ class Loader:
 
         logger.info(f"合計読み込み件数: {len(self.images)}")
 
+
+        steerings_nparr = np.array(self.steerings)
+        throttles_nparr = np.array(self.throttles)
         return (
             np.array(self.images),
-            np.array(self.steerings),
-            np.array(self.throttles),
+            steerings_nparr,
+            throttles_nparr,
+            self.__get_config(steerings_nparr, throttles_nparr)
         )
 
     def __load_session(self, session_dir: Path) -> None:
@@ -94,7 +95,7 @@ class Loader:
             # 前処理
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, self.image_size)
-            img = img.astype(np.float32) / self.normalize_param
+            img = img.astype(np.float32) / self.norm_divisor
 
 
             # データ追加
@@ -105,33 +106,43 @@ class Loader:
 
         logger.info(f"  {session_dir.name}: {loaded_count}/{len(df)} 件読み込み成功")
 
-    def get_stats(self) -> dict:
-        """データセット統計を取得"""
-        if not self.images:
-            return {
-                'num_samples': 0,
-                'error': 'データが読み込まれていません'
-            }
-
-        steerings = np.array(self.steerings)
-        throttles = np.array(self.throttles)
-
-        config = {
-            "image_size": self.image_size,
-            'image_shape': (len(self.images),) + self.image_size + (3,),
-            
+    def __get_config(self, steerings: np.ndarray, throttles: np.ndarray) -> ModelConfig:
+        data = {
+            'image_size': self.image_size,
+            'norm_divisor': self.norm_divisor,
             'steering_min': float(steerings.min()),
             'steering_max': float(steerings.max()),
-            'steering_mean': float(steerings.mean()),
-            'steering_std': float(steerings.std()),
             'throttle_min': float(throttles.min()),
             'throttle_max': float(throttles.max()),
-            'throttle_mean': float(throttles.mean()),
-            'throttle_std': float(throttles.std()),
-            'num_samples': len(self.images),
         }
-        return {
-        }
+        return ModelConfig(**data)
+    # def get_stats(self) -> dict:
+    #     """データセット統計を取得"""
+    #     if not self.images:
+    #         return {
+    #             'num_samples': 0,
+    #             'error': 'データが読み込まれていません'
+    #         }
+
+    #     steerings = np.array(self.steerings)
+    #     throttles = np.array(self.throttles)
+
+    #     config = {
+    #         "image_size": self.image_size,
+    #         'image_shape': (len(self.images),) + self.image_size + (3,),
+            
+    #         'steering_min': float(steerings.min()),
+    #         'steering_max': float(steerings.max()),
+    #         'steering_mean': float(steerings.mean()),
+    #         'steering_std': float(steerings.std()),
+    #         'throttle_min': float(throttles.min()),
+    #         'throttle_max': float(throttles.max()),
+    #         'throttle_mean': float(throttles.mean()),
+    #         'throttle_std': float(throttles.std()),
+    #         'num_samples': len(self.images),
+    #     }
+    #     return {
+    #     }
 
 
 if __name__ == '__main__':
@@ -142,26 +153,8 @@ if __name__ == '__main__':
     )
 
     # データ読み込みテスト
-    loader = Loader('../../data')
+    loader = Loader('./data')
     images, steerings, throttles = loader.load_sessions()
+    cfg = loader.get_config()
+    logger.info(cfg)
 
-    # 統計表示
-    print("\n=== データセット統計 ===")
-    stats = loader.get_stats()
-    for key, val in stats.items():
-        print(f"{key:20s}: {val}")
-
-    # データ品質チェック
-    num_samples = stats.get('num_samples', 0)
-    if num_samples == 0:
-        print("\nエラー: データが読み込まれていません")
-    elif num_samples < 1000:
-        print(f"\n警告: サンプル数が少ないです（現在{num_samples}件、最低1000件推奨）")
-
-    steering_mean = stats.get('steering_mean', 0)
-    if abs(steering_mean) > 0.3:
-        print(f"警告: ステアリングが偏っています（平均={steering_mean:.2f}）")
-
-    steering_std = stats.get('steering_std', 0)
-    if steering_std < 0.05:
-        print("警告: ステアリング変動が小さい（直進ばかり？）")
