@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field, FilePath, time
 import time
 
-
 class DriveData(BaseModel):
     """ラズパイで収集される1ステップ分の走行データ"""
-    # timestamp: 
+    timestamp: float
     image_name: str = Field(..., description="path to a corresponding image file")
     steering: float = Field(..., ge=-1.0, le=1.0)
     throttle: float = Field(..., ge=-1.0, le=1.0)
