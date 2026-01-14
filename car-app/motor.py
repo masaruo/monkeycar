@@ -2,7 +2,7 @@ import time
 import logging
 from adafruit_servokit import ServoKit
 
-from config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, MIN_SPEED
+from config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
 
 logger = logging.getLogger(__name__)
@@ -52,37 +52,4 @@ class Motor:
 
     def stop(self):
         """Stop the vehicle"""
-        self.accelerate(-1.0)
-
-#     def drive_test(self):
-#         """Test throttle and steering with safe values.
-        
-#         Warning: Ensure vehicle wheels are off the ground before running!
-#         """
-#         logger.info("Starting drive test")
-        
-#         print("微速前進... (slow forward)")
-#         self.throttle = 0.05
-#         time.sleep(2.0)
-#         self.stop()
- 
-#         print("停止（ブレーキ） (stop/brake)")
-#         self.stop()
-#         time.sleep(1.0)
-
-#         print("左転 (turn left)")
-#         self.turn_left(50)
-#         time.sleep(1.0)
-        
-#         print("右転 (turn right)")
-#         self.turn_right(50)
-#         time.sleep(1.0)
-        
-#         print("センタリング (center)")
-#         self.center_steering()
-        
-#         logger.info("Drive test completed")
-
-# if __name__ == "__main__":
-#     motor = Motor()
-#     motor.drive_test()
+        self.accelerate(STOP_SPEED)

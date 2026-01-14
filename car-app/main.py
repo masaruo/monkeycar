@@ -5,12 +5,7 @@ from joystick import Joystick
 from camera import Camera
 from recorder import Recorder
 from interpreter import Interpreter
-
-A: int = 0
-B: int = 1
-X: int = 2
-Y: int = 3
-
+from config import X, B, Y, RT, LEFTSTICK
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +52,8 @@ def main():
                     # steer, throttle = pilot.predict(frame=frame)
                     pass
                 else:
-                    steer = js.get_steering(axis_index=0)# -1.0～+1 .0
-                    throttle = js.get_throttle(axis_index=5)# -1.0~+1.0
+                    steer = js.get_steering(axis_index=LEFTSTICK)# -1.0～+1 .0
+                    throttle = js.get_throttle(axis_index=RT)# -1.0~+1.0
 
                 # スケーリングは環境に合わせて調整
                 motor.steer(steer)
