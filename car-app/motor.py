@@ -2,8 +2,7 @@ from typing import Self
 import logging
 from adafruit_servokit import ServoKit
 
-from config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
-
+from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
 logger = logging.getLogger(__name__)
 

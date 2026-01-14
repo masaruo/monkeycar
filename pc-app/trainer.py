@@ -5,6 +5,7 @@ import tensorflow as tf
 import json
 from model import CarModel
 from loader import Loader
+from shared.models import ModelConfig
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +13,33 @@ logger = logging.getLogger(__name__)
 class Trainer:
     """モデル学習・変換用クラス"""
 
-    def __init__(self):
-        """Trainerを初期化"""
-        pass
+    def __init__(
+        self,
+        images: np.ndarray,
+        steerings: np.ndarray,
+        throttles: np.ndarray,
+        cfg: 'ModelConfig',
+    ):
+        self.images = images
+        self.steerings = steerings
+        self.throttles = throttles
+        self.cfg = cfg
+        logging.info("Trainer initiated")
+
+    def __normalize(self) -> tuple[float, float]:
+        steering_min = self.cfg.steering_min
+        steering_max = self.cfg.steering_max
+        throttle_min = self.cfg.throttle_min
+        throttle_max = self.cfg.throttle_max
+
+        # ステアリング値を[-1, 1]に正規化 
+        steering_normal = 2 * (self.steerings - steering_min) / (steering_max - steering_min) - 1
+        steering_normal = np.clip(steering_normal, -1, 1)
+        # スロットル値を[0, 1]に正規化 
+        throttle_normal = (self.throttles - throttle_min) / (throttle_max - throttle_min)
+        throttle_normal = np.clip(throttle_normal, 0, 1)
+
+        return steering_normal, throttle_normal
 
     def train(self) -> None:
         """
@@ -28,44 +53,30 @@ class Trainer:
         5. 設定情報をconfig.jsonに保存
         6. TFLiteに変換してラズパイ用に出力
         """
-        # データセットと統計情報を読み込み
-        loader = Loader()
-        images, steerings, throttles = loader.load_sessions()
-        stats = loader.get_stats()
-
-        steering_min = stats['steering_min']
-        steering_max = stats['steering_max']
-        throttle_min = stats['throttle_min']
-        throttle_max = stats['throttle_max']
-
-        # ステアリング値を[-1, 1]に正規化
-        steering_norm = 2 * (steerings - steering_min) / (steering_max - steering_min) - 1
-        steering_norm = np.clip(steering_norm, -1, 1)
-
-        # スロットル値を[0, 1]に正規化
-        throttle_norm = (throttles - throttle_min) / (throttle_max - throttle_min)
-        throttle_norm = np.clip(throttle_norm, 0, 1)
+        steering_norm, throttle_norm = self.__normalize()
         
         # ステアリングとスロットルを結合（出力層用）
         outputs = np.column_stack([steering_norm, throttle_norm])
 
         # CNNモデルをビルド
+        num_samples, *individual_shape = self.images.shape
         model: keras.Model = CarModel.build_model(
-            input_shape=images.shape[1:],
+            input_shape=tuple(individual_shape),
             output_type='continuous',
         )
         model.summary()
 
         # モデルをコンパイル
         model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+            # optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+            optimizer='adam',
             loss='mse',
             metrics=['mae'],
         )
 
         # モデルを学習（EarlyStoppingで過学習を防止）
         history = model.fit(
-            images,
+            self.images,
             outputs,
             batch_size=32,
             epochs=50,
@@ -83,38 +94,26 @@ class Trainer:
         model_path = "./output/model.keras"
         model.save(str(model_path))
         logger.info(f"モデルを保存しました: {model_path}")
-        
-        # 設定情報をJSONに保存（ラズパイで使用）
-        config = {
-            'image_size': [160, 120],  # [幅, 高さ] - ラズパイ推論時の入力順序
-            'image_shape': list(images.shape[1:]),  # [高さ, 幅, チャンネル] - TensorFlow内部用
-            'steering_min': float(steering_min),
-            'steering_max': float(steering_max),
-            'throttle_min': float(throttle_min),
-            'throttle_max': float(throttle_max),
-            'num_samples': len(images),
-            'epochs_trained': len(history.history['loss']),
-            'final_loss': float(history.history['loss'][-1]),
-            'final_val_loss': float(history.history['val_loss'][-1]),
-        }
+
+        self.cfg.image_shape = list(self.images.shape[1:]) # [高さ, 幅, チャンネル] - TensorFlow内部用
+        self.cfg.num_samples = len(self.images)
+        self.cfg.epochs_trained = len(history.history['loss'])
+        self.cfg.final_loss = float(history.history['loss'][-1])
+        self.final_val_loss = float(history.history['val_loss'][-1])
+
         config_path = "./output/config.json"
         with open(config_path, 'w') as f:
-            json.dump(config, f, indent=2)
-        logger.info(f"設定情報を保存しました: {config_path}")
-        
-        # TFLiteに変換
-        self.convert_to_tflite()
+            json.dump(self.cfg.model_dump(), f, indent=2)
 
-    def convert_to_tflite(self) -> None:
+        # TFLiteに変換
+        self.__convert_to_tflite(model=model)
+
+    def __convert_to_tflite(self, model:keras.Model) -> None:
         """
         KerasモデルをTensorFlow Liteに変換してラズパイ用に出力
         
         TFLiteへの変換により、ラズパイ上での推論が高速化される
         """
-        # 学習済みモデルを読み込み
-        model = keras.models.load_model(str("./output/model.keras"))
-        logger.info("モデルをTFLiteに変換中...")
-        
         # TFLite変換設定
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
         converter.target_spec.supported_ops = [
@@ -164,5 +163,4 @@ def main() -> None:
         raise
 
 if __name__ == '__main__':
-    main()_ == '__main__':
     main()

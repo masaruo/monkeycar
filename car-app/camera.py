@@ -1,7 +1,7 @@
 import logging
 import time
 from typing import Self
-
+from shared.config import ROTATE
 import numpy as np
 from picamera2 import Picamera2
 
@@ -27,8 +27,7 @@ class Camera:
         frame = self.picam2.capture_array("main")
         if frame is None:
             raise RuntimeError("Failed to capture frame")
-        # カメラが逆さまなので180度回転
-        frame = np.rot90(frame, 2)
+        frame = np.rot90(frame, ROTATE)
         return frame
 
     def close(self) -> None:

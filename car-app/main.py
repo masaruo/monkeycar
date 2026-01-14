@@ -5,7 +5,8 @@ from joystick import Joystick
 from camera import Camera
 from recorder import Recorder
 from interpreter import Interpreter
-from config import X, B, Y, RT, LEFTSTICK
+import argparse
+from shared.config import X, B, Y, RT, LEFTSTICK
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +14,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 
 def main():
-    recorder = Recorder(base_dir="data")
-    # pilot = Interpreter("./output/model.tflite", "./output/config.json")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--autopilot", action='store_true')
+    parser.add_argument("--record", action='store_true')
+    args = parser.parse_args()
 
-    is_auto: bool = False
-    is_recording: bool = False
-    
+    recorder = Recorder(base_dir="data")
+    # pilot = Interpreter("./model")
+
+    is_auto: bool = args.autopilot
+    is_recording: bool = args.record
+
     prev_x_pressed: bool = False
     prev_b_pressed = False
 
@@ -40,8 +46,7 @@ def main():
 
                 if js.get_button(Y):
                     raise KeyboardInterrupt("Y button pressed")
-                
-                # frame = camera.capture()
+
                 frame = cam.capture()
 
                 steer: float
@@ -59,9 +64,9 @@ def main():
                 motor.accelerate(throttle)
 
                 if is_recording:
-                    recorder.save(frame, steer, throttle) #実際のsteerと機械学習のステアリングが違う
+                    recorder.save(frame, steer, throttle)
 
-                logging.info(f"steering:[{steer}] and throttle:[{throttle}]")
+                # logging.info(f"steering:[{steer}] and throttle:[{throttle}]")
                 time.sleep(0.02)
         except KeyboardInterrupt:
             logger.info("Finish main loop")

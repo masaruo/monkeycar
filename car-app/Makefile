@@ -12,9 +12,12 @@ all: run
 run:
 	uv run python main.py
 
+autopilot:
+	uv run python main.py --autopilot
+
 # データ記録モード（引数や環境変数を渡す場合に拡張可能）
 record:
-	uv run python main.py
+	uv run python main.py --record
 
 # 依存関係の同期
 install:

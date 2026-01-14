@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 
 # Motor Settings
 MAX_SPEED: Final = 0.3
