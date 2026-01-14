@@ -4,7 +4,7 @@ from pathlib import Path
 import csv
 import numpy as np
 import cv2
-
+from shared.models import DriveData
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,8 @@ class Recorder:
         image_name = f"{timestamp:.6f}.jpg"
         image_path = self.image_dir / image_name
 
+        data = DriveData(timestamp=timestamp, steering=steering, throttle=throttle, image_name=image_name)
+
         bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         cv2.imwrite(str(image_path), bgr)
 
@@ -43,4 +45,4 @@ class Recorder:
             writer = csv.writer(f)
             writer.writerow([timestamp, image_name, steering, throttle])
 
-        logger.debug(f"保存: {image_name} (ステアリング={steering}, スロットル={throttle})")
+        logger.debug(f"saved: {data}")

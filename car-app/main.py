@@ -21,7 +21,7 @@ def main():
     camera = Camera()
     recorder = Recorder(base_dir="data")
     motor = Motor()
-    pilot = Interpreter("./output/model.tflite", "./output/config.json")
+    # pilot = Interpreter("./output/model.tflite", "./output/config.json")
 
     is_auto: bool = False
     is_recording: bool = False
@@ -54,14 +54,15 @@ def main():
                 throttle: float
 
                 if is_auto:
-                    steer, throttle = pilot.predict(frame=frame)
+                    # steer, throttle = pilot.predict(frame=frame)
+                    pass
                 else:
-                    steer = js.get_steering(axis_index=0)      # -1.0～+1.0
-                    throttle = js.get_throttle(axis_index=5)
+                    steer = js.get_steering(axis_index=0)# -1.0～+1 .0
+                    throttle = js.get_throttle(axis_index=5)# -1.0~+1.0
 
                 # スケーリングは環境に合わせて調整
-                motor.steering = steer
-                motor.throttle = throttle
+                motor.steer(steer)
+                motor.accelerate(throttle)
 
                 if is_recording:
                     recorder.save(frame, steer, throttle) #実際のsteerと機械学習のステアリングが違う

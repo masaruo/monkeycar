@@ -2,11 +2,11 @@
 
 all: run
 
-# プロジェクトの初期化（libcameraへのアクセスを許可する仮想環境を作成）
-setup:
-	rm -rf .venv
-	uv venv --system-site-packages
-	uv add tensorflow opencv-python pillow numpy pygame
+# # プロジェクトの初期化（libcameraへのアクセスを許可する仮想環境を作成）
+# setup:
+# 	rm -rf .venv
+# 	uv venv --system-site-packages
+# 	uv add tensorflow opencv-python pillow numpy pygame
 
 # 通常実行（自律走行を想定）
 run:
@@ -18,6 +18,7 @@ record:
 
 # 依存関係の同期
 install:
+	uv venv --system-site-packages
 	uv sync
 
 # キャッシュの削除
