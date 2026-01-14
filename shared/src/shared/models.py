@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 import time
+from typing import Optional
 
 class DriveData(BaseModel):
     """ラズパイで収集される1ステップ分の走行データ"""
@@ -8,22 +9,21 @@ class DriveData(BaseModel):
     steering: float = Field(..., ge=-1.0, le=1.0)
     throttle: float = Field(..., ge=-1.0, le=1.0)
 
-from pydantic import BaseModel, Field
-from typing import List
 
 class ModelConfig(BaseModel):
     # 推論・前処理用
-    image_size: List[int] = Field(..., description="[Width, Height]")
-    image_shape: List[int] = Field(description="[Height,  Width, Channels]")
+    image_size: tuple[int, int] = Field(default=(160, 120), description="[Width, Height]")
+    norm_divisor: float = Field(default=255.0, gt=0, description="Normalization divisor")
+    image_shape: tuple[int, int, int] | None = Field(default=None, description="[Height, Width, Channels]")
     
-    # 制御値の正規化用
-    steering_min: float = -1.0
-    steering_max: float = 1.0
-    throttle_min: float = -1.0
-    throttle_max: float = 1.0
+    # 制御値の正規化用 - 訓練後に設定される（デフォルト値なし）
+    steering_min: float | None = Field(default=None, description="Min steering value")
+    steering_max: float | None = Field(default=None, description="Max steering value")
+    throttle_min: float | None = Field(default=None, description="Min throttle value")
+    throttle_max: float | None = Field(default=None, description="Max throttle value")
     
-    # 訓練メタデータ (Optional)
-    num_samples: int
-    epochs_trained: int
-    final_loss: float
-    final_val_loss: float
+    # 訓練メタデータ
+    num_samples: int | None = Field(default=None, description="Number of training samples")
+    epochs_trained: int | None = Field(default=None, description="Number of epochs trained")
+    final_loss: float | None = Field(default=None, description="Final training loss")
+    final_val_loss: float | None = Field(default=None, description="Final validation loss")
