@@ -13,9 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 
 def main():
-    camera = Camera()
     recorder = Recorder(base_dir="data")
-    motor = Motor()
     # pilot = Interpreter("./output/model.tflite", "./output/config.json")
 
     is_auto: bool = False
@@ -24,7 +22,7 @@ def main():
     prev_x_pressed: bool = False
     prev_b_pressed = False
 
-    with Joystick() as js:
+    with Joystick() as js, Motor() as motor, Camera() as cam:
         try:
             while True:
                 js.poll()  # 1フレームにつき1回だけイベント更新
@@ -43,7 +41,8 @@ def main():
                 if js.get_button(Y):
                     raise KeyboardInterrupt("Y button pressed")
                 
-                frame = camera.capture()
+                # frame = camera.capture()
+                frame = cam.capture()
 
                 steer: float
                 throttle: float
@@ -65,8 +64,6 @@ def main():
                 logging.info(f"steering:[{steer}] and throttle:[{throttle}]")
                 time.sleep(0.02)
         except KeyboardInterrupt:
-            motor.stop()
-            camera.close()
             logger.info("Finish main loop")
 
 if __name__ == "__main__":

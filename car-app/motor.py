@@ -1,4 +1,4 @@
-import time
+from typing import Self
 import logging
 from adafruit_servokit import ServoKit
 
@@ -46,10 +46,19 @@ class Motor:
         clamped = max(STEERING_CENTER - MAX_LEFT, min(angle, STEERING_CENTER + MAX_RIGHT))
         self._steering.angle = int(clamped)
 
-    def __setup_esc(self):
+    def __setup_esc(self) -> None:
         logger.info("Setting Up ESC")
         self.stop()
 
     def stop(self):
         """Stop the vehicle"""
         self.accelerate(STOP_SPEED)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.stop()
+        logging.info("motor stopped")
+        return False
+
