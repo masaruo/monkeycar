@@ -20,7 +20,10 @@ def main():
     args = parser.parse_args()
 
     recorder = Recorder(base_dir="data")
-    # pilot = Interpreter("./model")
+    try:
+        pilot = Interpreter("./output")
+    except Exception:
+        pilot = None
 
     is_auto: bool = args.autopilot
     is_recording: bool = args.record
@@ -34,13 +37,13 @@ def main():
                 js.poll()  # 1フレームにつき1回だけイベント更新
                 x_pressed = js.get_button(X)
                 if x_pressed and not prev_x_pressed:
-                    logging.info(f"AutoPilot mode {'stop' if is_auto else 'start'}")
+                    logger.info(f"AutoPilot mode {'stop' if is_auto else 'start'}")
                     is_auto = not is_auto
                 prev_x_pressed = x_pressed
 
                 b_pressed = js.get_button(B)
                 if b_pressed and not prev_b_pressed:
-                    logging.info(f"Recording {'stop' if is_recording else 'start'}")
+                    logger.info(f"Recording {'stop' if is_recording else 'start'}")
                     is_recording = not is_recording
                 prev_b_pressed = b_pressed
 
@@ -52,9 +55,8 @@ def main():
                 steer: float
                 throttle: float
 
-                if is_auto:
-                    # steer, throttle = pilot.predict(frame=frame)
-                    pass
+                if is_auto and pilot:
+                    steer, throttle = pilot.predict(frame=frame)
                 else:
                     steer = js.get_steering(axis_index=LEFTSTICK)# -1.0～+1 .0
                     throttle = js.get_throttle(axis_index=RT)# -1.0~+1.0
@@ -66,7 +68,7 @@ def main():
                 if is_recording:
                     recorder.save(frame, steer, throttle)
 
-                # logging.info(f"steering:[{steer}] and throttle:[{throttle}]")
+                logger.info(f"steering:[{steer}] and throttle:[{throttle}]")
                 time.sleep(0.02)
         except KeyboardInterrupt:
             logger.info("Finish main loop")

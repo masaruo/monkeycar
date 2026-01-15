@@ -32,3 +32,9 @@ clean:
 # 仮想環境を含む完全な削除
 fclean: clean
 	rm -rf .venv
+
+clean-data:
+	rm -rf ./data ./output
+
+calibrate:
+	uv run python motor.py

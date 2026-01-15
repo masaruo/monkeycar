@@ -1,8 +1,14 @@
-from typing import Self
+from typing import Self, Final
 import logging
 from adafruit_servokit import ServoKit
 
-from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
+# from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
+
+MAX_SPEED: Final = 0.02
+STOP_SPEED: Final = -1.0
+STEERING_CENTER: Final = 60
+MAX_LEFT: Final = 50
+MAX_RIGHT: Final = 50
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +58,31 @@ class Motor:
     def stop(self):
         """Stop the vehicle"""
         self.accelerate(STOP_SPEED)
+        self.steer(0)
 
     def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
         self.stop()
-        logging.info("motor stopped")
+        logger.info("motor stopped")
         return False
 
+if __name__ == "__main__":
+    print("print calib")
+    import time
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    main_logger = logging.getLogger()
+    main_logger.info("calibration started")
+    with Motor() as m:
+        main_logger.info(f"neutral")
+        m.steer(0)
+        time.sleep(2)
+
+        main_logger.info(f"left")
+        m.steer(-1.0)
+        time.sleep(2)
+
+        main_logger.info(f"right")
+        m.steer(1.0)
+        time.sleep(2)

@@ -12,17 +12,18 @@ logger = logging.getLogger(__name__)
 class Interpreter:
     def __init__(self, base_dir: str) -> None:
         self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
         self.model_path = self.base_dir / "model.tflite"
         self.config_path = self.base_dir / "config.json"
 
         with open(self.config_path, 'r') as f:
-            self.config = ModelConfig(json.load(f))
+            self.config = ModelConfig.model_validate_json(f.read())
 
-        self.image_size = tuple(self.config['image_size'])
-        self.steering_min = self.config['steering_min']
-        self.steering_max = self.config['steering_max']
-        self.throttle_min = self.config['throttle_min']
-        self.throttle_max = self.config['throttle_max']
+        self.image_size = self.config.image_size
+        self.steering_min = self.config.steering_min
+        self.steering_max = self.config.steering_max
+        self.throttle_min = self.config.throttle_min
+        self.throttle_max = self.config.throttle_max
 
         self.interpreter = tflite.Interpreter(model_path=str(self.model_path))
         self.interpreter.allocate_tensors()
