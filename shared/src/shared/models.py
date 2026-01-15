@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 import time
-from typing import Optional
 
 class DriveData(BaseModel):
     """ラズパイで収集される1ステップ分の走行データ"""

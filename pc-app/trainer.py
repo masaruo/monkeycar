@@ -3,8 +3,8 @@ import numpy as np
 import keras
 import tensorflow as tf
 import json
+from pathlib import Path
 from model import CarModel
-from loader import Loader
 from shared.models import ModelConfig
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,10 @@ class Trainer:
         5. 設定情報をconfig.jsonに保存
         6. TFLiteに変換してラズパイ用に出力
         """
+        # 出力ディレクトリを作成
+        Path('./model').mkdir(parents=True, exist_ok=True)
+        Path('./output').mkdir(parents=True, exist_ok=True)
+        
         steering_norm, throttle_norm = self.__normalize()
         
         # ステアリングとスロットルを結合（出力層用）
@@ -91,8 +95,8 @@ class Trainer:
         )
 
         # 学習済みモデルを保存
-        model_path = "./output/model.keras"
-        model.save(str(model_path))
+        model_path = "./model/model.keras"
+        model.save(str(model_path),)
         logger.info(f"モデルを保存しました: {model_path}")
 
         self.cfg.image_shape = list(self.images.shape[1:]) # [高さ, 幅, チャンネル] - TensorFlow内部用
@@ -131,36 +135,36 @@ class Trainer:
         logger.info(f"TFLiteモデルを保存しました: {tflite_path}")
 
 
-def main() -> None:
-    """
-    テスト用のメインエントリーポイント
+# def main() -> None:
+#     """
+#     テスト用のメインエントリーポイント
     
-    Trainerクラスを初期化して学習を開始する
-    """
-    # ロギングの設定
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    )
+#     Trainerクラスを初期化して学習を開始する
+#     """
+#     # ロギングの設定
+#     logging.basicConfig(
+#         level=logging.INFO,
+#         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#     )
     
-    logger.info("=" * 60)
-    logger.info("モデル学習・変換スクリプトを開始します")
-    logger.info("=" * 60)
+#     logger.info("=" * 60)
+#     logger.info("モデル学習・変換スクリプトを開始します")
+#     logger.info("=" * 60)
     
-    try:
-        # Trainerを初期化して学習を実行
-        trainer = Trainer()
-        trainer.train()
+#     try:
+#         # Trainerを初期化して学習を実行
+#         trainer = Trainer()
+#         trainer.train()
         
-        logger.info("=" * 60)
-        logger.info("学習と変換が完了しました")
-        logger.info("=" * 60)
+#         logger.info("=" * 60)
+#         logger.info("学習と変換が完了しました")
+#         logger.info("=" * 60)
         
-    except FileNotFoundError as e:
-        logger.error(f"ファイルが見つかりません: {e}")
-    except Exception as e:
-        logger.error(f"エラーが発生しました: {e}")
-        raise
+#     except FileNotFoundError as e:
+#         logger.error(f"ファイルが見つかりません: {e}")
+#     except Exception as e:
+#         logger.error(f"エラーが発生しました: {e}")
+#         raise
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

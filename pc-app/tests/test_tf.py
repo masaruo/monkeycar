@@ -1,6 +1,5 @@
 import unittest
 import os
-import numpy as np
 import keras
 from trainer import Trainer  # ファイル名が trainer.py であると仮定
 
