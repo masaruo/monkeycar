@@ -1,10 +1,10 @@
 # ホストPC用 Makefile（uv）
 
-.PHONY: all run install clean fclean pull push lint lint-strict
+.PHONY: all train install clean fclean pull push lint lint-strict
 
-all: run
+all: train
 
-run:
+train:
 	uv run python main.py
 
 install:

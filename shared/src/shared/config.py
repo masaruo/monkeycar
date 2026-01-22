@@ -1,11 +1,11 @@
 from typing import Final
 
 # Motor Settings
-MAX_SPEED: Final = 0.3
-STOP_SPEED: Final = -1.0
-STEERING_CENTER: Final = 80
-MAX_LEFT: Final = 50
-MAX_RIGHT: Final = 50
+# MAX_SPEED: Final = 0.3
+# STOP_SPEED: Final = -1.0
+# STEERING_CENTER: Final = 80
+# MAX_LEFT: Final = 50
+# MAX_RIGHT: Final = 50
 
 # Joystick Settings
 A: Final = 0

@@ -24,5 +24,5 @@ push_model(){
 case "$1" in
     pull) pull_data ;;
     push) push_model ;;
-    *) echo "Usage: $0 {pull|push}" ;;
+    *) echo "Usage: $0 [pull|push]" ;;
 esac
