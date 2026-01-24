@@ -28,6 +28,10 @@ class Loader:
         self.images = []
         self.steerings = []
         self.throttles = []
+        
+        # DataTransformer (画像処理モード用)
+        from shared.transformer import DataTransformer
+        self.transformer = DataTransformer(image_size=image_size)
 
     def load_sessions(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, ModelConfig | None]:
         """全セッションからデータを読み込む"""
@@ -92,11 +96,10 @@ class Loader:
                 logger.warning(f"画像の読み込みに失敗: {image_path}")
                 continue
 
-            # 前処理
+            # 前処理 (DataTransformerを使用)
+            # RGB変換のみここで行い、あとはTransformerに任せる
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = cv2.resize(img, self.image_size)
-            img = img.astype(np.float32) / self.norm_divisor
-
+            img = self.transformer.transform_image(img)
 
             # データ追加
             self.images.append(img)
@@ -116,45 +119,3 @@ class Loader:
             'throttle_max': float(throttles.max()),
         }
         return ModelConfig(**data)
-    # def get_stats(self) -> dict:
-    #     """データセット統計を取得"""
-    #     if not self.images:
-    #         return {
-    #             'num_samples': 0,
-    #             'error': 'データが読み込まれていません'
-    #         }
-
-    #     steerings = np.array(self.steerings)
-    #     throttles = np.array(self.throttles)
-
-    #     config = {
-    #         "image_size": self.image_size,
-    #         'image_shape': (len(self.images),) + self.image_size + (3,),
-            
-    #         'steering_min': float(steerings.min()),
-    #         'steering_max': float(steerings.max()),
-    #         'steering_mean': float(steerings.mean()),
-    #         'steering_std': float(steerings.std()),
-    #         'throttle_min': float(throttles.min()),
-    #         'throttle_max': float(throttles.max()),
-    #         'throttle_mean': float(throttles.mean()),
-    #         'throttle_std': float(throttles.std()),
-    #         'num_samples': len(self.images),
-    #     }
-    #     return {
-    #     }
-
-
-if __name__ == '__main__':
-    # ロガー初期化（これがないとログが出力されない）
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname)s: %(message)s'
-    )
-
-    # データ読み込みテスト
-    loader = Loader('./data')
-    images, steerings, throttles = loader.load_sessions()
-    cfg = loader.get_config()
-    logger.info(cfg)
-

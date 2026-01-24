@@ -1,10 +1,10 @@
 import logging
 import numpy as np
-import tensorflow.lite as tflite
+# import tensorflow.lite as tflite # TFLiteを除外
 from pathlib import Path
-import json
 import cv2
 from shared.models import ModelConfig
+from shared.network import ConvNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,8 @@ class Interpreter:
     def __init__(self, base_dir: str) -> None:
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        self.model_path = self.base_dir / "model.tflite"
+        # self.model_path = self.base_dir / "model.tflite"
+        self.params_path = self.base_dir / "params.pkl" # パラメータファイルのパス
         self.config_path = self.base_dir / "config.json"
 
         with open(self.config_path, 'r') as f:
@@ -25,15 +26,21 @@ class Interpreter:
         self.throttle_min = self.config.throttle_min
         self.throttle_max = self.config.throttle_max
 
-        self.interpreter = tflite.Interpreter(model_path=str(self.model_path))
-        self.interpreter.allocate_tensors()
+        # DataTransformer Initialized
+        from shared.transformer import DataTransformer
+        self.transformer = DataTransformer(config=self.config)
 
-        self.input_details = self.interpreter.get_input_details()
-        self.output_details = self.interpreter.get_output_details()
+        # ConvNetworkの初期化
+        # input_dim needs to be (C, H, W)
+        # image_size is (W, H)
+        input_dim = (3, self.image_size[1], self.image_size[0])
+        self.net = ConvNetwork(input_dim=input_dim)
+        
+        # パラメータの読み込み
+        logger.info(f"Loading params from {self.params_path}")
+        self.net.load_params(self.params_path)
 
-        logger.info(f"TFLiteモデル読み込み完了: {self.model_path}")
-        logger.info(f"入力形状: {self.input_details[0]['shape']}")
-        logger.info(f"出力形状: {self.output_details[0]['shape']}")
+        logger.info("ConvNetwork initialized")
 
     def preprocess(self, frame: np.ndarray) -> np.ndarray:
         """画像を前処理してモデル入力形式に変換
@@ -42,19 +49,15 @@ class Interpreter:
             frame: カメラからの画像 (H, W, 3)
 
         Returns:
-            前処理済み画像 (1, H, W, 3)
+            前処理済み画像 (1, 3, H, W)  <-- NCHW形式に変更
         """
 
-        # bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        # Transformerによる一括処理
+        # (Resize -> Normalize -> CHW)
+        transposed = self.transformer.transform_image(frame)
 
-        # リサイズ（学習時と同じサイズに）
-        resized = cv2.resize(frame, self.image_size)
-
-        # 正規化 [0, 255] -> [0.0, 1.0]
-        normalized = resized.astype(np.float32) / 255.0
-
-        # バッチ次元を追加 (H, W, 3) -> (1, H, W, 3)
-        batched = np.expand_dims(normalized, axis=0)
+        # バッチ次元を追加 (3, H, W) -> (1, 3, H, W)
+        batched = np.expand_dims(transposed, axis=0)
 
         return batched
 
@@ -66,24 +69,23 @@ class Interpreter:
 
         Returns:
             (steering, throttle) のタプル
-            - steering: -1.0～1.0
-            - throttle: -1.0~1.0
+            - steering: -1.0～1.0 (Physical value depends on config)
+            - throttle: -1.0~1.0 (Physical value depends on config)
         """
         # 前処理
         input_data = self.preprocess(frame)
 
         # 推論実行
-        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
-        self.interpreter.invoke()
+        output = self.net.predict(input_data)
 
-        # 出力を取得
-        output = self.interpreter.get_tensor(self.output_details[0]['index'])
+        # 出力を取得 (1, 2) の形状: [[steering_norm, throttle_norm]]
+        steering_norm = float(output[0][0])
+        throttle_norm = float(output[0][1])
 
-        # 出力は (1, 2) の形状: [[steering, throttle]]
-        steering = float(output[0][0])
-        throttle = float(output[0][1])
+        # 非正規化 (モデル出力[-1, 1] -> 物理値[min, max])
+        steering, throttle = self.transformer.denormalize_labels(steering_norm, throttle_norm)
 
-        # 学習時の範囲にクリップ
+        # 安全のためクリップ (物理的な可動範囲を超えないように)
         steering = np.clip(steering, self.steering_min, self.steering_max)
         throttle = np.clip(throttle, self.throttle_min, self.throttle_max)
 

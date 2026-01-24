@@ -1,11 +1,11 @@
 from typing import Final
 
 # Motor Settings
-MAX_SPEED: Final = 0.3
-STOP_SPEED: Final = -1.0
-STEERING_CENTER: Final = 80
-MAX_LEFT: Final = 50
-MAX_RIGHT: Final = 50
+# MAX_SPEED: Final = 0.3
+# STOP_SPEED: Final = -1.0
+# STEERING_CENTER: Final = 80
+# MAX_LEFT: Final = 50
+# MAX_RIGHT: Final = 50
 
 # Joystick Settings
 A: Final = 0
@@ -17,3 +17,7 @@ LEFTSTICK: Final = 0
 
 # Camera Settings
 ROTATE: Final = 2 # 90度を何回ローテーションするか、２の場合１８０度
+
+# Image Settings
+H: Final = 160
+W: Final = 120

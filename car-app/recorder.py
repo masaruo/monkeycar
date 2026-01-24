@@ -24,6 +24,10 @@ class Recorder:
         self.csv_path = self.session_dir / "records.csv"
         self._init_csv()
 
+        # Initialize DataTransformer for resizing only (default 160x120)
+        from shared.transformer import DataTransformer
+        self.transformer = DataTransformer(image_size=(160, 120))
+        
         logger.info(f"Recorder initialized: {self.session_id}")
 
     def _init_csv(self) -> None:
@@ -39,7 +43,11 @@ class Recorder:
         data = DriveData(timestamp=timestamp, steering=steering, throttle=throttle, image_name=image_name)
 
         bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(str(image_path), bgr)
+        
+        # Resize image before saving to save space
+        bgr_resized = self.transformer.resize_image(bgr)
+        
+        cv2.imwrite(str(image_path), bgr_resized)
 
         with open(self.csv_path, 'a', newline='') as f:
             writer = csv.writer(f)
