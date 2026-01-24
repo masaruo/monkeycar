@@ -1,62 +1,96 @@
 import numpy as np
 import logging
 from tqdm import trange
-
+from shared.models import ModelConfig
+from shared.optimizer import Adam
+from shared.network import ConvNetwork
+from typing import Final
+import json
+import os
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
+EPOCHS: Final = 50
+BATCH_SIZE: Final = 32
+VALIDATION_SPLIT: Final = 0.2
+
+
 class Trainer:
-    def __init__(self, images: np.ndarray, steerings: np.ndarray, throttles: np.ndarray, cfg)
-        self.images = images
-        self.steerings = steerings
-        self.throttles = throttles
-        self.cfg = cfg
-        logger.info("Trainer Initiated")
+    def __init__(self, images: np.ndarray, steerings: np.ndarray, throttles: np.ndarray, cfg: ModelConfig) -> None:
+        self.images: np.ndarray = images
+        self.steerings: np.ndarray = steerings
+        self.throttles: np.ndarray = throttles
+        self.cfg: ModelConfig = cfg
+        
+        # Initialize DataTransformer with config
+        from shared.transformer import DataTransformer
+        self.transformer = DataTransformer(config=cfg)
+        
+        self.targets: np.ndarray = self.__normalize()
+        self.network = ConvNetwork(input_dim=(3, cfg.image_size[1], cfg.image_size[0]))
+        
+        # Output directory setup
+        self.output_dir = f"output/{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        os.makedirs(self.output_dir, exist_ok=True)
+        
+        logger.info(f"Trainer Initiated. Output dir: {self.output_dir}")
 
-# class Trainer:
-#     def __init__(self, network, x_train, t_train, x_test, t_test, epochs=20, mini_batch_size=64, optimizer=None):
-#         self.network = network
-#         self.x_train = x_train
-#         self.t_train = t_train
-#         self.x_test = x_test
-#         self.t_test = t_test
-#         self.epochs = epochs
-#         self.batch_size = mini_batch_size
-#         self.optimizer = optimizer
+    def __normalize(self) -> np.ndarray:
+        # Use DataTransformer for consistent normalization
+        # Now passing arrays directly as normalize_labels supports it
+        s_norm, t_norm = self.transformer.normalize_labels(self.steerings, self.throttles)
+        return np.column_stack([s_norm, t_norm])
 
-#         self.train_size = x_train.shape[0]
-#         self.iter_per_epoch = max(self.train_size // mini_batch_size, 1)
-#         self.max_iter = int(epochs * self.iter_per_epoch)
-#         self.current_iter = 0
-#         self.current_epoch = 0
+    def _split_data(self, split_rate: float = VALIDATION_SPLIT) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        num_samples = len(self.images)
 
-#         self.train_loss_list = []
-#         self.test_loss_list = []
+        indices = np.random.permutation(num_samples)
+        
+        val_size = int(num_samples * split_rate)
+        train_size = num_samples - val_size
 
-#     def train(self):
-#         for epoch in trange(self.epochs):
-#             idx = np.random.permutation(self.train_size)
-#             x_shuffled = self.x_train[idx]
-#             y_shuffled = self.y_train[idx]
-#             # ミニバッチ抽出
-#             for i in trange(self.iter_per_epoch):
-#                 batch_x = x_shuffled[i*self.batch_size : (i + 1)*self.batch_size] #todo i maybe last? then i + 1 is out of bound
-#                 batch_y = y_shuffled[i*self.batch_size : (i + 1)*self.batch_size] #todo i maybe last? then i + 1 is out of bound
+        train_indices = indices[:train_size]
+        val_indices = indices[train_size:]
+
+        x_train, x_test = self.images[train_indices], self.images[val_indices]
+        t_train, t_test = self.targets[train_indices], self.targets[val_indices]
+
+        return x_train, t_train, x_test, t_test
+
+    def train(self) -> None:
+        x_train, t_train, x_test, t_test = self._split_data()
+        optimizer = Adam(lr=0.001)
+
+        num_samples = x_train.shape[0]
+        # model
+        # model = xxx
+        history = {'loss': []}
+
+        for epoch in trange(EPOCHS, desc="Epochs"):
+            indices = np.random.permutation(num_samples)
+            for i in trange(0, num_samples, BATCH_SIZE):
+                batch_idx = indices[i : i + BATCH_SIZE]
+                batch_x = x_train[batch_idx]
+                batch_t = t_train[batch_idx]
+
+                grads = self.network.gradient(batch_x, batch_t)
+
+                optimizer.update(self.network.params, grads)
             
-#             # 勾配
-#             grads = self.network.gradient(batch_x, batch_t)
+            current_loss = self.network.loss(batch_x, batch_t)
+            history['loss'].append(float(current_loss))
+            logger.info(f"Epoch {epoch+1}/{EPOCHS} - loss: {current_loss:.4f}")
 
-#             # パラメーター更新
-#             self.optimizer.update(self.network.params, grads)
+        # Save results
+        self.network.save_params(os.path.join(self.output_dir, "params.pkl"))
+        
+        # with open(os.path.join(self.output_dir, "history.json"), 'w') as f:
+        #     json.dump(history, f, indent=4) # history is dict, so json.dump is fine
 
-#             loss = self.network.loss(batch_x, batch_y)
-#             self.train_loss_list.append(loss)
-#             self.current_iter += 1
-
-#         # end of an epoch
-#         self.current_epoch += 1
-#         test_loss = self.network.loss(self.x_test, self.test_test)#? test_test?
-#         self.test_loss_list.append(test_loss)
-
-
+        # Configの保存
+        with open(os.path.join(self.output_dir, "config.json"), 'w') as f:
+            f.write(self.cfg.model_dump_json(indent=4))
+        
+        logger.info(f"Training finished. Results saved to {self.output_dir}")

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import logging
-from .utils import im2col, col2im
-from .functions import softmax, cross_entropy_error
+from .utils import im2col, col2im, debug_shape
+# from .functions import softmax, cross_entropy_error
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ class Relu(Layer):
     def __init__(self) -> None:
         self.mask: np.ndarray | None = None
 
+    @debug_shape
     def forward(self, x: np.ndarray) -> np.ndarray:
         # xが０より大きいか否かで、True/Falseの行列を作成
         self.mask: np.ndarray = (x <= 0)
@@ -66,6 +67,7 @@ class Affine(Layer):
         self.dW = None
         self.db = None
 
+    @debug_shape
     def forward(self, x) -> np.ndarray:
         self.original_x_shape = x.shape
         x = x.reshape(x.shape[0], -1)
@@ -146,6 +148,7 @@ class Convolution(Layer):
         self.dW = None
         self.db = None
 
+    @debug_shape
     def forward(self, x):
         FN, C, FH, FW = self.W.shape
         N, C, H, W = x.shape
@@ -188,6 +191,7 @@ class Pooling(Layer):
         self.x = None
         self.arg_max = None
 
+    @debug_shape
     def forward(self, x):
         N, C, H, W = x.shape
         out_h = int(1 + (H - self.pool_h) / self.stride)
