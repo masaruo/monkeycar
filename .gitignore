@@ -12,8 +12,8 @@ __pycache__/
 # 走行中に生成される大量の画像データ (*.jpg) を除外
 
 data
-output
 sample
+tmp
 
 *.jpg
 *.json
