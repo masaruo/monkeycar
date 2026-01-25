@@ -4,7 +4,7 @@
 PI_USER=team40
 PI_HOST="team40.local"
 PI_DATA_PATH="/home/team40/monkeycar/car-app/data/"
-PI_MODEL_PATH="/home/team40/monkeycar/car-app/output/"
+PI_MODEL_PATH="/home/team40/monkeycar/car-app/"
 LOCAL_PATH_DATA="./data"
 LOCAL_PATH_MODEL="./output"
 
@@ -18,7 +18,7 @@ pull_data(){
 # ラズパイへ学習モデルをプッシュ
 push_model(){
     echo "モデルを車に転送中"
-    rsync -avz --progress ${LOCAL_PATH_MODEL} ${PI_USER}@${PI_HOST}:${PI_MODEL_PATH}
+    rsync -avz --progress --exclude 'model.keras' ${LOCAL_PATH_MODEL} ${PI_USER}@${PI_HOST}:${PI_MODEL_PATH}
 }
 
 case "$1" in

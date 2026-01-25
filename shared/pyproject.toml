@@ -1,7 +1,7 @@
 [project]
 name = "shared"
 version = "0.1.0"
-description = "Add your description here"
+description = "shared items for monkeycar project"
 readme = "README.md"
 authors = [
     { name = "masaru ogawa", email = "masaruo@gmail.com" }
@@ -14,3 +14,9 @@ dependencies = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "ruff>=0.14.11",
+]
