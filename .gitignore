@@ -14,6 +14,8 @@ __pycache__/
 data
 output
 sample
+temp
+tmp
 
 *.jpg
 *.json
