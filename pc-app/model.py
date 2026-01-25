@@ -27,8 +27,8 @@ class CarModel:
             layers.Input(shape=input_shape),
             
             # データ拡張 (訓練時のみ)
-            layers.RandomFlip("horizontal"),
-            layers.RandomRotation(0.1),
+            # layers.RandomFlip("horizontal"),
+            # layers.RandomRotation(0.1),
             
             # CNN ブロック 1
             layers.Conv2D(32, (3, 3), padding='same', activation='relu'),

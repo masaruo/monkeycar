@@ -4,9 +4,9 @@
 PI_USER=team40
 PI_HOST="team40.local"
 PI_DATA_PATH="/home/team40/monkeycar/car-app/data/"
-PI_MODEL_PATH="/home/team40/monkeycar/car-app/model/"
+PI_MODEL_PATH="/home/team40/monkeycar/car-app/output/"
 LOCAL_PATH_DATA="./data"
-LOCAL_PATH_MODEL="./model"
+LOCAL_PATH_MODEL="./output"
 
 # ラズパイから学習データをプル
 pull_data(){
