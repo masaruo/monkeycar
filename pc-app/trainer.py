@@ -64,9 +64,6 @@ class Trainer:
         optimizer = Adam(lr=0.001)
 
         num_samples = x_train.shape[0]
-        # model
-        # model = xxx
-        history = {'loss': []}
 
         for epoch in trange(EPOCHS, desc="Epochs"):
             indices = np.random.permutation(num_samples)
@@ -80,15 +77,11 @@ class Trainer:
                 optimizer.update(self.network.params, grads)
             
             current_loss = self.network.loss(batch_x, batch_t)
-            history['loss'].append(float(current_loss))
             logger.info(f"Epoch {epoch+1}/{EPOCHS} - loss: {current_loss:.4f}")
 
         # Save results
         self.network.save_params(os.path.join(self.output_dir, "params.pkl"))
         
-        # with open(os.path.join(self.output_dir, "history.json"), 'w') as f:
-        #     json.dump(history, f, indent=4) # history is dict, so json.dump is fine
-
         # Configの保存
         with open(os.path.join(self.output_dir, "config.json"), 'w') as f:
             f.write(self.cfg.model_dump_json(indent=4))
