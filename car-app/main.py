@@ -35,13 +35,13 @@ def main():
         try:
             while True:
                 js.poll()  # 1フレームにつき1回だけイベント更新
-                x_pressed = js.get_button(X)
+                x_pressed = js.get_button(X) #! X = autopilot
                 if x_pressed and not prev_x_pressed:
                     logger.info(f"AutoPilot mode {'stop' if is_auto else 'start'}")
                     is_auto = not is_auto
                 prev_x_pressed = x_pressed
 
-                b_pressed = js.get_button(B)
+                b_pressed = js.get_button(B) #! B = record
                 if b_pressed and not prev_b_pressed:
                     logger.info(f"Recording {'stop' if is_recording else 'start'}")
                     is_recording = not is_recording
