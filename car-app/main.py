@@ -68,7 +68,7 @@ def main():
                 if is_recording:
                     recorder.save(frame, steer, throttle)
 
-                logger.info(f"steering:[{steer}] and throttle:[{throttle}]")
+                # logger.info(f"steering:[{steer}] and throttle:[{throttle}]")
                 time.sleep(0.02)
         except KeyboardInterrupt:
             logger.info("Finish main loop")

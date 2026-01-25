@@ -1,12 +1,14 @@
 from typing import Self, Final
 import logging
 from adafruit_servokit import ServoKit
+# api ref https://docs.circuitpython.org/projects/servokit/en/latest/api.html
 
 # from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
-MAX_SPEED: Final = 0.02
+SPEED_REDUCTION_RATIO: Final = 0.1
 STOP_SPEED: Final = -1.0
-STEERING_CENTER: Final = 60
+STEERING_TRIM: Final = -10
+STEERING_CENTER: Final = 90 + STEERING_TRIM
 MAX_LEFT: Final = 50
 MAX_RIGHT: Final = 50
 
@@ -24,9 +26,9 @@ class Motor:
         try:
             kit = ServoKit(channels=16)
             self._throttle = kit.continuous_servo[1]
-            self._throttle.set_pulse_width_range(1000, 2000)
+            self._throttle.set_pulse_width_range(500, 2500)
             self._steering = kit.servo[0]
-            self._steering.set_pulse_width_range(1000, 2000)
+            self._steering.set_pulse_width_range(500, 2500)
             self._steer_angle = self._steering.angle
             self._deadzone = deadzone
             self.__setup_esc()
@@ -38,18 +40,21 @@ class Motor:
     def accelerate(self, raw_value: float) -> None:
         # raw_value: -1.0 (stop) to +1.0 (full forward)
         # Apply deadzone around stop point (-1.0)
-        if abs(raw_value - (-1.0)) < self._deadzone:
-            final_throttle = -1.0
+        normalized: float = (1 + raw_value) / 2 # 0.0 ~ 1.0
+        if normalized < self._deadzone:
+            throttle = 0.0 #! NO REVERSE
         else:
-            final_throttle = max(-1.0, min(raw_value, MAX_SPEED))
+            throttle = normalized * SPEED_REDUCTION_RATIO
+        final_throttle = min(throttle, 1.0)
         self._throttle.throttle = final_throttle
 
     def steer(self, raw_value: float) -> None:
         # raw_value = -1.0 ~ 1.0
-        # Scale by MAX_LEFT/MAX_RIGHT (both 50) to get full range
-        angle = STEERING_CENTER + (raw_value * MAX_LEFT)
-        clamped = max(STEERING_CENTER - MAX_LEFT, min(angle, STEERING_CENTER + MAX_RIGHT))
-        self._steering.angle = int(clamped)
+        if raw_value < 0:
+            angle = STEERING_CENTER + (raw_value * MAX_LEFT)
+        else:
+            angle = STEERING_CENTER + (raw_value * MAX_RIGHT)
+        self._steering.angle = int(angle)
 
     def __setup_esc(self) -> None:
         logger.info("Setting Up ESC")
@@ -85,4 +90,8 @@ if __name__ == "__main__":
 
         main_logger.info(f"right")
         m.steer(1.0)
+        time.sleep(2)
+
+        main_logger.info(f"neutral")
+        m.steer(0)
         time.sleep(2)
