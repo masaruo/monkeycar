@@ -15,14 +15,17 @@ class ConvNetwork:
         self.layers = OrderedDict()
 
         # 2. 畳み込みブロックの構築 (パラメータをレイヤに注入)
-        self.layers['Conv1'] = Convolution(self.params['W1'], self.params['b1'], stride=2, pad=0)
+        self.layers['Conv1'] = Convolution(self.params['W1'], self.params['b1'], stride=1, pad=0)
         self.layers['Relu1'] = Relu()
+        self.layers['Pool1'] = Pooling(pool_h=2, pool_w=2, stride=2, pad=0)
 
-        self.layers['Conv2'] = Convolution(self.params['W2'], self.params['b2'], stride=2, pad=0)
+        self.layers['Conv2'] = Convolution(self.params['W2'], self.params['b2'], stride=1, pad=0)
         self.layers['Relu2'] = Relu()
+        self.layers['Pool2'] = Pooling(pool_h=2, pool_w=2, stride=2, pad=0)
 
-        self.layers['Conv3'] = Convolution(self.params['W3'], self.params['b3'], stride=2, pad=0)
+        self.layers['Conv3'] = Convolution(self.params['W3'], self.params['b3'], stride=1, pad=0)
         self.layers['Relu3'] = Relu()
+        self.layers['Pool3'] = Pooling(pool_h=2, pool_w=2, stride=2, pad=0)
 
         # 3. 全結合ブロックの構築
         self.layers['Affine1'] = Affine(self.params['W4'], self.params['b4'])
@@ -44,9 +47,9 @@ class ConvNetwork:
         # {レイヤ名: (フィルタ数, フィルタサイズ, ストライド, パディング)}
         # Donkey Carの標準に近い構成を採用
         conf = {
-            'C1': {'n': 24, 'f': 5, 's': 2},
-            'C2': {'n': 32, 'f': 5, 's': 2},
-            'C3': {'n': 64, 'f': 3, 's': 2}
+            'C1': {'n': 24, 'f': 5},
+            'C2': {'n': 32, 'f': 5},
+            'C3': {'n': 64, 'f': 3}
         }
 
         # --- 2. 重みの初期化 (Heの初期値) ---
@@ -66,7 +69,7 @@ class ConvNetwork:
         params['b3'] = np.zeros(conf['C3']['n'])
 
         # --- 3. ダミーデータによる Flatten サイズの自動計算 ---
-        # ここで一度 Convolution 層を組んで、出口のサイズを取得する
+        # ここで一度 Convolution + Pooling 層を組んで、出口のサイズを取得する
         flatten_size = self._calculate_flatten_size(input_dim, params, conf)
 
         # --- 4. 全結合層（Affine）の初期化 ---
@@ -85,10 +88,15 @@ class ConvNetwork:
         # ダミーデータを生成 (1枚分)
         x = np.zeros((1, *input_dim))
         
-        # 畳み込み層だけを順次適用
-        x = Convolution(params['W1'], params['b1'], stride=conf['C1']['s']).forward(x)
-        x = Convolution(params['W2'], params['b2'], stride=conf['C2']['s']).forward(x)
-        x = Convolution(params['W3'], params['b3'], stride=conf['C3']['s']).forward(x)
+        # 畳み込み層とプーリング層を順次適用
+        x = Convolution(params['W1'], params['b1'], stride=1).forward(x)
+        x = Pooling(pool_h=2, pool_w=2, stride=2).forward(x)
+        
+        x = Convolution(params['W2'], params['b2'], stride=1).forward(x)
+        x = Pooling(pool_h=2, pool_w=2, stride=2).forward(x)
+        
+        x = Convolution(params['W3'], params['b3'], stride=1).forward(x)
+        x = Pooling(pool_h=2, pool_w=2, stride=2).forward(x)
     
         return x.size # 全要素数を返す
 
@@ -160,3 +168,8 @@ class ConvNetwork:
         self.layers['Affine1'].b = self.params['b4']
         self.layers['Affine2'].W = self.params['W5']
         self.layers['Affine2'].b = self.params['b5']
+
+    def evaluate(self, x: np.ndarray, t: np.ndarray) -> float:
+        y = self.predict(x)
+        loss = self.last_layer.forward(y, t)
+        return loss
