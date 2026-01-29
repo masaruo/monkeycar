@@ -44,3 +44,22 @@ class Affine(Layer):
         self.dW = np.dot(self.x.T, dout)
         self.db = np.sum(dout, axis=0)
         return dx
+
+
+class Relu(Layer):
+    def __init__(self: Self) -> None:
+        self.mask = None
+
+    def forward(self: Self, x: np.ndarray) -> np.ndarray:
+        assert x is not None, "x cannot be None"
+        self.mask = (x <= 0)
+        out = x.copy()
+        out[self.mask] = 0
+        return out
+
+    def backward(self: Self, dout:np.ndarray) -> np.ndarray:
+        assert self.mask is not None, "Run forward before backward"
+        assert dout.shape == self.mask.shape, f"Shape mismatch: dout {dout.shape} != mask {self.mask.shape}"
+        dout[self.mask] = 0
+        dx = dout
+        return dx
