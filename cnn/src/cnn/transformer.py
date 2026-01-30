@@ -79,20 +79,20 @@ class DataTransformer:
             return float(s_norm), float(t_norm)
         return s_norm, t_norm
 
-    # def denormalize_labels(self, steering_norm: float, throttle_norm: float) -> tuple[float, float]:
-    #     """Convert model output back to physical values."""
-    #     if not self.config:
-    #         raise ValueError("ModelConfig is required for denormalization")
+    def denormalize_labels(self, steering_norm: float, throttle_norm: float) -> tuple[float, float]:
+        """Convert model output back to physical values."""
+        if not self.config:
+            raise ValueError("ModelConfig is required for denormalization")
 
-    #     s_min = self.config.steering_min
-    #     s_max = self.config.steering_max
-    #     t_min = self.config.throttle_min
-    #     t_max = self.config.throttle_max
+        s_min = self.config.steering_min
+        s_max = self.config.steering_max
+        t_min = self.config.throttle_min
+        t_max = self.config.throttle_max
 
-    #     # Steering: [-1, 1] -> [min, max]
-    #     steering = ((steering_norm + 1) / 2) * (s_max - s_min) + s_min
+        # Steering: [-1, 1] -> [min, max]
+        steering = ((steering_norm + 1) / 2) * (s_max - s_min) + s_min
 
-    #     # Throttle: [0, 1] -> [min, max]
-    #     throttle = throttle_norm * (t_max - t_min) + t_min
+        # Throttle: [0, 1] -> [min, max]
+        throttle = throttle_norm * (t_max - t_min) + t_min
 
-    #     return float(steering), float(throttle)
+        return float(steering), float(throttle)

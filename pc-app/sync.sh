@@ -6,7 +6,7 @@ PI_HOST="team40.local"
 PI_DATA_PATH="/home/team40/monkeycar/car-app/data/"
 PI_MODEL_PATH="/home/team40/monkeycar/car-app/"
 LOCAL_PATH_DATA="./data"
-LOCAL_PATH_MODEL="./output"
+LOCAL_PATH_MODEL="./weights_bin"
 
 # ラズパイから学習データをプル
 pull_data(){

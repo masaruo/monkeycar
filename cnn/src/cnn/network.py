@@ -159,91 +159,13 @@ class SimpleConvNet:
             self.layers[key].W = self.params['W' + str(i+1)]
             self.layers[key].b = self.params['b' + str(i+1)]
 
-# src/cnn/network.py に追記
-
-# class DeepConvNet:
-#     """
-#     Kerasモデルに近づけた多層CNN
-#     構成: Conv -> ReLU -> Pool -> Conv -> ReLU -> Pool -> Flatten -> Affine -> ReLU -> Affine -> ReLU -> Affine(Out)
-#     """
-#     def __init__(self, input_dim=(3, 120, 160),
-#                  conv_param_1={'filter_num':16, 'filter_size':3, 'pad':1, 'stride':1},
-#                  conv_param_2={'filter_num':32, 'filter_size':3, 'pad':1, 'stride':1},
-#                  hidden_size=100, output_size=2, weight_init_std=0.01):
-        
-#         # --- レイヤ1の出力サイズ計算 ---
-#         input_C, input_H, input_W = input_dim
-#         # Conv1
-#         conv1_h = (input_H - conv_param_1['filter_size'] + 2*conv_param_1['pad']) // conv_param_1['stride'] + 1
-#         conv1_w = (input_W - conv_param_1['filter_size'] + 2*conv_param_1['pad']) // conv_param_1['stride'] + 1
-#         # Pool1 (2x2)
-#         pool1_h = int(conv1_h / 2)
-#         pool1_w = int(conv1_w / 2)
-        
-#         # --- レイヤ2の出力サイズ計算 ---
-#         # Conv2
-#         conv2_h = (pool1_h - conv_param_2['filter_size'] + 2*conv_param_2['pad']) // conv_param_2['stride'] + 1
-#         conv2_w = (pool1_w - conv_param_2['filter_size'] + 2*conv_param_2['pad']) // conv_param_2['stride'] + 1
-#         # Pool2 (2x2)
-#         pool2_h = int(conv2_h / 2)
-#         pool2_w = int(conv2_w / 2)
-        
-#         # 全結合層への入力サイズ
-#         pool2_output_size = conv_param_2['filter_num'] * pool2_h * pool2_w
-
-#         # 重みの初期化 (He初期化)
-#         self.params = {}
-        
-#         # Layer 1: Conv
-#         pre1 = input_C * conv_param_1['filter_size']**2
-#         self.params['W1'] = np.sqrt(2.0/pre1) * np.random.randn(conv_param_1['filter_num'], input_C, conv_param_1['filter_size'], conv_param_1['filter_size'])
-#         self.params['b1'] = np.zeros(conv_param_1['filter_num'])
-        
-#         # Layer 2: Conv
-#         pre2 = conv_param_1['filter_num'] * conv_param_2['filter_size']**2
-#         self.params['W2'] = np.sqrt(2.0/pre2) * np.random.randn(conv_param_2['filter_num'], conv_param_1['filter_num'], conv_param_2['filter_size'], conv_param_2['filter_size'])
-#         self.params['b2'] = np.zeros(conv_param_2['filter_num'])
-        
-#         # Layer 3: Affine (Hidden)
-#         pre3 = pool2_output_size
-#         self.params['W3'] = np.sqrt(2.0/pre3) * np.random.randn(pool2_output_size, hidden_size)
-#         self.params['b3'] = np.zeros(hidden_size)
-        
-#         # Layer 4: Affine (Output)
-#         pre4 = hidden_size
-#         self.params['W4'] = np.sqrt(2.0/pre4) * np.random.randn(hidden_size, output_size)
-#         self.params['b4'] = np.zeros(output_size)
-
-#         # レイヤの生成
-#         self.layers = OrderedDict()
-        
-#         # Block 1
-#         self.layers['Conv1'] = Convolution(self.params['W1'], self.params['b1'], conv_param_1['stride'], conv_param_1['pad'])
-#         self.layers['Relu1'] = Relu()
-#         self.layers['Pool1'] = Pooling(pool_h=2, pool_w=2, stride=2)
-        
-#         # Block 2
-#         self.layers['Conv2'] = Convolution(self.params['W2'], self.params['b2'], conv_param_2['stride'], conv_param_2['pad'])
-#         self.layers['Relu2'] = Relu()
-#         self.layers['Pool2'] = Pooling(pool_h=2, pool_w=2, stride=2)
-        
-#         self.layers['Flatten'] = Flatten()
-        
-#         # Fully Connected
-#         self.layers['Affine1'] = Affine(self.params['W3'], self.params['b3'])
-#         self.layers['Relu3']   = Relu()
-#         self.layers['Dropout1'] = Dropout(0.5)
-#         self.layers['Affine2'] = Affine(self.params['W4'], self.params['b4'])
-
-#         self.last_layer = MeanSquaredError()
-
 class DeepConvNet:
     """
     Kerasモデル (3ブロック構成) に合わせた修正版
     構成: Conv(16)->Pool -> Conv(32)->Pool -> Conv(64)->Pool -> Flatten -> Affine -> ...
     """
     def __init__(self, input_dim=(3, 120, 160),
-                 conv_param_1={'filter_num':16, 'filter_size':3, 'pad':1, 'stride':1},
+                 conv_param_1={'filter_num':16, 'filter_size':3, 'pad':1, 'stride':2},
                  conv_param_2={'filter_num':32, 'filter_size':3, 'pad':1, 'stride':1},
                  conv_param_3={'filter_num':64, 'filter_size':3, 'pad':1, 'stride':1}, # 追加
                  hidden_size=100, output_size=2, weight_init_std=0.01):
@@ -340,31 +262,6 @@ class DeepConvNet:
         y = self.predict(x)
         return self.last_layer.forward(y, t)
 
-    # def gradient(self, x, t):
-    #     # forward
-    #     self.loss(x, t, train_flag=True)
-
-    #     # backward
-    #     dout = 1
-    #     dout = self.last_layer.backward(dout)
-
-    #     layers = list(self.layers.values())
-    #     layers.reverse()
-    #     for layer in layers:
-    #         dout = layer.backward(dout)
-
-    #     grads = {}
-    #     grads['W1'] = self.layers['Conv1'].dW
-    #     grads['b1'] = self.layers['Conv1'].db
-    #     grads['W2'] = self.layers['Conv2'].dW
-    #     grads['b2'] = self.layers['Conv2'].db
-    #     grads['W3'] = self.layers['Affine1'].dW
-    #     grads['b3'] = self.layers['Affine1'].db
-    #     grads['W4'] = self.layers['Affine2'].dW
-    #     grads['b4'] = self.layers['Affine2'].db
-
-    #     return grads
-
     def gradient(self, x, t):
             """
             誤差逆伝播法による勾配の算出
@@ -396,3 +293,33 @@ class DeepConvNet:
             grads['W5'], grads['b5'] = self.layers['Affine2'].dW, self.layers['Affine2'].db
 
             return grads
+
+    def load_params(self, file_name="params.pkl"):
+        """Pickleファイルからパラメータを読み込む"""
+        import pickle
+        with open(file_name, 'rb') as f:
+            params = pickle.load(f)
+        
+        # 1. 辞書を更新
+        for key, val in params.items():
+            self.params[key] = val
+
+        # 2. 各レイヤの重み変数にも適用
+        # Layer 1
+        self.layers['Conv1'].W = self.params['W1']
+        self.layers['Conv1'].b = self.params['b1']
+        
+        # Layer 2
+        self.layers['Conv2'].W = self.params['W2']
+        self.layers['Conv2'].b = self.params['b2']
+        
+        # Layer 3 (DeepConvNetに追加した3層目)
+        if 'Conv3' in self.layers:
+             self.layers['Conv3'].W = self.params['W3']
+             self.layers['Conv3'].b = self.params['b3']
+        
+        # Fully Connected
+        self.layers['Affine1'].W = self.params['W4']
+        self.layers['Affine1'].b = self.params['b4']
+        self.layers['Affine2'].W = self.params['W5']
+        self.layers['Affine2'].b = self.params['b5']

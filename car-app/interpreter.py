@@ -2,8 +2,11 @@ import logging
 import numpy as np
 from pathlib import Path
 import cv2
-from shared.models import ModelConfig
-from shared.network import ConvNetwork
+# from shared.models import ModelConfig
+# from shared.network import ConvNetwork
+from cnn.transformer import DataTransformer
+from cnn.models import ModelConfig
+from cnn.network import DeepConvNet
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +28,19 @@ class Interpreter:
         self.throttle_min = self.config.throttle_min
         self.throttle_max = self.config.throttle_max
 
-        # DataTransformer Initialized
-        from shared.transformer import DataTransformer
         self.transformer = DataTransformer(config=self.config)
 
         # ConvNetworkの初期化
         # input_dim needs to be (C, H, W)
         # image_size is (W, H)
         input_dim = (3, self.image_size[1], self.image_size[0])
-        self.net = ConvNetwork(input_dim=input_dim)
+        self.net = DeepConvNet(input_dim=input_dim)
         
         # パラメータの読み込み
         logger.info(f"Loading params from {self.params_path}")
-        self.net.load_params(self.params_path)
+        self.net.load_params(str(self.params_path))
 
-        logger.info("ConvNetwork initialized")
+        logger.info("DeepConvNetwork initialized")
 
     def preprocess(self, frame: np.ndarray) -> np.ndarray:
         """画像を前処理してモデル入力形式に変換

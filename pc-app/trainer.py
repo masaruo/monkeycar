@@ -3,7 +3,14 @@ import numpy as np
 from loader import Loader
 from cnn.network import SimpleConvNet, DeepConvNet
 from cnn.optimizer import Adam
+from cnn.transformer import DataTransformer
 from tqdm import trange
+import pickle
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
 
 class Trainer:
     def __init__(self, data_dir="../data", output_dir="weights_bin", 
@@ -38,27 +45,52 @@ class Trainer:
         # ネットワークの初期化
         self._init_network()
 
+
     def _prepare_data(self):
         """データの読み込みと前処理"""
         print(f"Loading data from {self.data_dir}...")
         loader = Loader(data_dir=self.data_dir, image_size=self.image_size)
+        
+        # config も受け取る
         images, steerings, throttles, config = loader.load_sessions()
         
         if len(images) == 0:
             raise RuntimeError("No data found. Check your data path.")
 
-        # 1. 画像の整形 (N, H, W, C) -> (N, C, H, W)
-        # OpenCVなどは(H,W,C)だが、このCNN実装は(C,H,W)を期待するため
+        # Transformer の初期化
+        self.transformer = DataTransformer(config=config, image_size=self.image_size)
+
+        # 1. 画像の整形 & 正規化
+        # (N, H, W, C) -> (N, C, H, W)
         if images.ndim == 4 and images.shape[3] == 3:
             images = images.transpose(0, 3, 1, 2)
-            
-        # 2. 正規化 (0.0 ~ 1.0)
-        # Loader側ですでにされている場合もあるが、念のためfloat32変換と確認
+        
+        # 正規化 (0.0 ~ 1.0)
         self.x_all = images.astype('float32') / 255.0
         
-        # 3. 正解ラベルの結合 (Steering, Throttle)
-        # どちらも回帰対象とする
-        self.t_all = np.column_stack((steerings, throttles)).astype('float32')
+        # 2. 正解ラベルの正規化
+        t_steer_norm, t_throt_norm = self.transformer.normalize_labels(steerings, throttles)
+        
+        self.t_all = np.column_stack((t_steer_norm, t_throt_norm)).astype('float32')
+
+        # ============================================================
+        # 【追加箇所】 データの左右反転による水増し
+        # ============================================================
+        print(f"Original samples: {len(self.x_all)}")
+        print("Augmenting data with horizontal flips...")
+        
+        # 画像を左右反転: (N, C, H, W) なので、最後のW軸(インデックス3)を反転
+        x_flipped = self.x_all[:, :, :, ::-1]
+        
+        # 正解ラベルの反転: ステアリングの符号を反転 (Throttleはそのまま)
+        t_flipped = self.t_all.copy()
+        t_flipped[:, 0] = -t_flipped[:, 0]  # Steering is index 0
+        
+        # オリジナルと結合
+        self.x_all = np.concatenate([self.x_all, x_flipped], axis=0)
+        self.t_all = np.concatenate([self.t_all, t_flipped], axis=0)
+        
+        print(f"Data augmentation finished. Total samples: {len(self.x_all)}")
         
         # 4. Train/Test分割 (8:2)
         data_size = self.x_all.shape[0]
@@ -78,17 +110,6 @@ class Trainer:
         print(f"Target Max: {self.t_train.max(axis=0)}")
         print(f"Target Mean: {self.t_train.mean(axis=0)}")
 
-    # def _init_network(self):
-    #     """CNNの構築"""
-    #     input_dim = self.x_train.shape[1:] # (C, H, W)
-        
-    #     print("Initializing Network...")
-    #     self.network = DeepConvNet(
-    #         input_dim=input_dim,
-    #         hidden_size=100,
-    #         output_size=2,   # Steering, Throttle
-    #         weight_init_std=0.01
-    #     )
 
     def _init_network(self):
             """CNNの構築"""
@@ -102,7 +123,7 @@ class Trainer:
                 input_dim=input_dim,
                 
                 # 1層目: フィルター16枚, サイズ3x3
-                conv_param_1={'filter_num': 16, 'filter_size': 3, 'pad': 1, 'stride': 1},
+                conv_param_1={'filter_num': 16, 'filter_size': 3, 'pad': 1, 'stride': 2},
                 
                 # 2層目: フィルター32枚, サイズ3x3
                 conv_param_2={'filter_num': 32, 'filter_size': 3, 'pad': 1, 'stride': 1},
@@ -114,12 +135,12 @@ class Trainer:
             # オプティマイザは Adam (学習率は低めに設定)
             self.optimizer = Adam(lr=0.0001)
 
-    def train(self, iters_num=1000):
+    def train(self, iters_num=10000):
         """学習ループの実行"""
         print(f"\nStart Training for {iters_num} iterations...")
         train_size = self.x_train.shape[0]
         
-        for i in trange(iters_num):
+        for i in range(iters_num):
             # ミニバッチ取得
             batch_mask = np.random.choice(train_size, self.batch_size)
             x_batch = self.x_train[batch_mask]
@@ -155,15 +176,27 @@ class Trainer:
             true = self.t_test[idx]
             print(f"True: [Str:{true[0]:.2f}, Thr:{true[1]:.2f}] -> Pred: [Str:{pred[0]:.2f}, Thr:{pred[1]:.2f}]")
 
-    def save_weights(self):
-        """重みをバイナリ形式で保存"""
-        print(f"\nSaving weights to {self.output_dir}...")
+    def save_weights(self, param_filename="params.pkl", config_filename="config.json"):
+        """重み(pickle)と設定(json)を保存"""
+        print(f"\nSaving artifacts to {self.output_dir}...")
         os.makedirs(self.output_dir, exist_ok=True)
         
-        for key, param in self.network.params.items():
-            file_path = os.path.join(self.output_dir, f"{key}.bin")
-            param.astype('float32').tofile(file_path)
-            print(f"Saved {key} ({param.shape})")
+        # 1. パラメータの保存 (params.pkl)
+        param_path = os.path.join(self.output_dir, param_filename)
+        with open(param_path, 'wb') as f:
+            pickle.dump(self.network.params, f)
+        print(f"Saved parameters to {param_path}")
+
+        # 2. 設定ファイルの保存 (config.json)
+        # DataTransformerが持っているconfigを取り出して保存します
+        if self.transformer.config is not None:
+            config_path = os.path.join(self.output_dir, config_filename)
+            with open(config_path, 'w') as f:
+                # Pydantic v2対応 (v1の場合は .json())
+                f.write(self.transformer.config.model_dump_json(indent=2))
+            print(f"Saved config to {config_path}")
+        else:
+            print("Warning: Config object is missing. config.json was not saved.")
 
 if __name__ == "__main__":
     # 使用例
@@ -172,7 +205,7 @@ if __name__ == "__main__":
         trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001)
         
         # 学習実行
-        trainer.train(iters_num=1000)
+        trainer.train(iters_num=5000)
         
         # 重み保存
         trainer.save_weights()
