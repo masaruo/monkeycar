@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "shared",
+    "cnn",
     "keras>=3.13.0",
     "matplotlib>=3.10.8",
     "numpy<2.0.0",
@@ -13,12 +13,12 @@ dependencies = [
     "pandas>=2.3.3",
     "pillow>=12.1.0",
     "scikit-learn>=1.8.0",
-    "tensorflow>=2.15.0",
+    "tensorflow>=2.18.1",
     "tqdm>=4.67.1",
 ]
 
 [tool.uv.sources]
-shared = { path = "../shared", editable = true }
+cnn = { path = "../cnn", editable = true }
 
 [dependency-groups]
 dev = [

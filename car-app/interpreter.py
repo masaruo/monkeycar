@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-# import tensorflow.lite as tflite # TFLiteを除外
 from pathlib import Path
 import cv2
 from shared.models import ModelConfig
