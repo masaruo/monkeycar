@@ -5,7 +5,7 @@
 all: train
 
 train:
-	uv run python main.py
+	uv run python trainer.py
 
 install:
 	uv sync
@@ -19,7 +19,7 @@ fclean: clean
 	rm -rf .venv uv.lock
 
 clean-data:
-	rm -rf ./data ./output ./model
+	rm -rf ./data ./output ./model ./weights_bin
 
 pull:
 	./sync.sh pull

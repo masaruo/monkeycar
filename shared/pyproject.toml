@@ -1,5 +1,5 @@
 [project]
-name = "shared"
+name = "cnn"
 version = "0.1.0"
 description = "shared items for monkeycar project"
 readme = "README.md"
@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "numpy>=2.4.1",
     "pydantic>=2.12.5",
 ]
 

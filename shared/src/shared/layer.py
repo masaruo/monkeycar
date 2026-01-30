@@ -58,7 +58,7 @@ class Affine(Layer):
 
     ゼロから作るDL：147ページ
     """
-    def __init__(self, W, b) -> None:
+    def __init__(self, W: np.ndarray, b: np.ndarray) -> None:
         self.W = W
         self.b = b
         self.x = None

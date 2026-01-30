@@ -3,7 +3,8 @@ from pathlib import Path
 import numpy as np
 import cv2
 import pandas as pd
-from shared.models import ModelConfig
+from cnn.models import ModelConfig
+from cnn.transformer import DataTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ class Loader:
 
     def __init__(
         self,
-        data_dir: str = "data",
+        data_dir: str = "./data",
         image_size: tuple[int, int] = (160, 120),
     ):
         """
@@ -29,8 +30,6 @@ class Loader:
         self.steerings = []
         self.throttles = []
         
-        # DataTransformer (画像処理モード用)
-        from shared.transformer import DataTransformer
         self.transformer = DataTransformer(image_size=image_size)
 
     def load_sessions(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, ModelConfig | None]:
