@@ -1,7 +1,0 @@
-.DS_Store
-*~
-*.gz
-*.pyc
-__pycache__/
-mnist.pkl
-.ipynb_checkpoints
