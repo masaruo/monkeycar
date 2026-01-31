@@ -5,7 +5,7 @@ from adafruit_servokit import ServoKit
 
 # from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
-SPEED_REDUCTION_RATIO: Final = 0.1
+SPEED_REDUCTION_RATIO: Final = 0.01
 STOP_SPEED: Final = -1.0
 STEERING_TRIM: Final = -10
 STEERING_CENTER: Final = 90 + STEERING_TRIM
