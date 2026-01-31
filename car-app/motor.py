@@ -5,8 +5,9 @@ from adafruit_servokit import ServoKit
 
 # from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
-SPEED_REDUCTION_RATIO: Final = 0.1
+SPEED_REDUCTION_RATIO: Final = 0.03
 STOP_SPEED: Final = -1.0
+THROTTLE_OFFSET: Final = 0.0
 STEERING_TRIM: Final = -10
 STEERING_CENTER: Final = 90 + STEERING_TRIM
 MAX_LEFT: Final = 50
@@ -26,9 +27,9 @@ class Motor:
         try:
             kit = ServoKit(channels=16)
             self._throttle = kit.continuous_servo[1]
-            self._throttle.set_pulse_width_range(500, 2500)
+            self._throttle.set_pulse_width_range(1000, 2000)
             self._steering = kit.servo[0]
-            self._steering.set_pulse_width_range(500, 2500)
+            self._steering.set_pulse_width_range(1000, 2000)
             self._steer_angle = self._steering.angle
             self._deadzone = deadzone
             self.__setup_esc()
@@ -48,6 +49,7 @@ class Motor:
         final_throttle = min(throttle, 1.0)
         self._throttle.throttle = final_throttle
 
+    
     def steer(self, raw_value: float) -> None:
         # raw_value = -1.0 ~ 1.0
         if raw_value < 0:
@@ -74,24 +76,42 @@ class Motor:
         return False
 
 if __name__ == "__main__":
-    print("print calib")
-    import time
+    print("print esc calib")
+    import logging
+    # from motor import Motor # Uncomment if running from a separate file
+
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     main_logger = logging.getLogger()
-    main_logger.info("calibration started")
+    main_logger.info("ESC calibration started (Manual Mode)")
+    
+    print("\n--- INSTRUCTIONS ---")
+    print("1. Turn ESC OFF.")
+    print("2. Hold SET button and turn ESC ON (LED flashes).")
+    print("3. Release SET button.")
+    print("--------------------\n")
+
+    input("Press Enter to start sending signals...")
+
     with Motor() as m:
-        main_logger.info(f"neutral")
-        m.steer(0)
-        time.sleep(2)
+        # 1. NEUTRAL
+        main_logger.info("sending neutral (0.0)")
+        m._throttle.throttle = 0.0
+        print(">> Sending 0.0. Press ESC SET button once.")
+        input(">> Press Enter for next step...")
 
-        main_logger.info(f"left")
-        m.steer(-1.0)
-        time.sleep(2)
+        # 2. HIGH POINT (Forward Max)
+        main_logger.info("sending forward max (1.0)")
+        m._throttle.throttle = 1.0
+        print(">> Sending 1.0. Press ESC SET button once (LED changes).")
+        input(">> Press Enter for next step...")
 
-        main_logger.info(f"right")
-        m.steer(1.0)
-        time.sleep(2)
+        # 3. BRAKE POINT (Reverse Max)
+        main_logger.info("sending brake max (-1.0)")
+        m._throttle.throttle = -1.0
+        print(">> Sending -1.0. Press ESC SET button once (LED off/solid).")
+        input(">> Press Enter to finish...")
 
-        main_logger.info(f"neutral")
-        m.steer(0)
-        time.sleep(2)
+        # Finish
+        main_logger.info("neutral (0.0)")
+        m._throttle.throttle = 0.0
+        print("Done. Turn ESC Off and On.")
