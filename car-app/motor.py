@@ -5,7 +5,7 @@ from adafruit_servokit import ServoKit
 
 # from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
-SPEED_REDUCTION_RATIO: Final = 0.03
+SPEED_REDUCTION_RATIO: Final = 0.50
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
 STEERING_TRIM: Final = -10
@@ -76,42 +76,36 @@ class Motor:
         return False
 
 if __name__ == "__main__":
-    print("print esc calib")
-    import logging
-    # from motor import Motor # Uncomment if running from a separate file
-
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main_logger = logging.getLogger()
-    main_logger.info("ESC calibration started (Manual Mode)")
     
-    print("\n--- INSTRUCTIONS ---")
+    print("\n=== TAMIYA ESC CALIBRATION (Correct Sequence) ===")
+    print("WARNING: TIRES MUST BE OFF THE GROUND")
     print("1. Turn ESC OFF.")
-    print("2. Hold SET button and turn ESC ON (LED flashes).")
-    print("3. Release SET button.")
-    print("--------------------\n")
+    print("2. Hold SET button and Turn ESC ON.")
+    print("3. Wait for LED to flash, then release SET button.")
+    print("================================================\n")
 
-    input("Press Enter to start sending signals...")
+    input(">> Press Enter when LED is flashing (Setup Mode)...")
 
     with Motor() as m:
-        # 1. NEUTRAL
-        main_logger.info("sending neutral (0.0)")
-        m._throttle.throttle = 0.0
-        print(">> Sending 0.0. Press ESC SET button once.")
-        input(">> Press Enter for next step...")
-
-        # 2. HIGH POINT (Forward Max)
-        main_logger.info("sending forward max (1.0)")
+        # 【重要修正 2】 タミヤの正しい順番: ハイポイント -> ブレーキ -> ニュートラル
+        
+        # 1. HIGH POINT (Full Forward)
+        # キーボードで設定ボタンを押すまで信号を送り続ける
+        print("\n[STEP 1] Sending FULL FORWARD (1.0)...")
         m._throttle.throttle = 1.0
-        print(">> Sending 1.0. Press ESC SET button once (LED changes).")
-        input(">> Press Enter for next step...")
+        input(">> Press ESC SET button once (LED changes). Then press Enter here...")
 
-        # 3. BRAKE POINT (Reverse Max)
-        main_logger.info("sending brake max (-1.0)")
+        # 2. BRAKE POINT (Full Reverse)
+        print("\n[STEP 2] Sending FULL BRAKE (-1.0)...")
         m._throttle.throttle = -1.0
-        print(">> Sending -1.0. Press ESC SET button once (LED off/solid).")
-        input(">> Press Enter to finish...")
+        input(">> Press ESC SET button once (LED changes). Then press Enter here...")
 
-        # Finish
-        main_logger.info("neutral (0.0)")
+        # 3. NEUTRAL POINT
+        print("\n[STEP 3] Sending NEUTRAL (0.0)...")
         m._throttle.throttle = 0.0
-        print("Done. Turn ESC Off and On.")
+        input(">> Press ESC SET button once (LED turns off/solid). Then press Enter here...")
+
+        print("\nDONE! Calibration finished.")
+        print("Please restart the ESC (Turn OFF, then ON).")
