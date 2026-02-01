@@ -27,7 +27,7 @@ tmp
 *.tflite
 *.keras
 *.onnx
-
+*.pkl
 # ログファイルとテンポラリファイル
 *.log
 **/logs/
