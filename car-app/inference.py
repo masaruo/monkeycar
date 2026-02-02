@@ -2,8 +2,6 @@ import logging
 import numpy as np
 from pathlib import Path
 import cv2
-# from shared.models import ModelConfig
-# from shared.network import ConvNetwork
 from cnn.transformer import DataTransformer
 from cnn.models import ModelConfig
 from cnn.network import DeepConvNet
@@ -11,7 +9,7 @@ from cnn.network import DeepConvNet
 logger = logging.getLogger(__name__)
 
 
-class Interpreter:
+class Inference:
     def __init__(self, base_dir: str) -> None:
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
