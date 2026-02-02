@@ -83,7 +83,7 @@ class Interpreter:
         throttle_norm = float(output[0][1])
 
         # 非正規化 (モデル出力[-1, 1] -> 物理値[min, max])
-        # steering, throttle = self.transformer.denormalize_labels(steering_norm, throttle_norm)
+        steering, throttle = self.transformer.denormalize_labels(steering_norm, throttle_norm)
 
         # 安全のためクリップ (物理的な可動範囲を超えないように)
         steering = np.clip(steering_norm, self.steering_min, self.steering_max)
