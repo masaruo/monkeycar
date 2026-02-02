@@ -4,7 +4,7 @@ from motor import Motor
 from joystick import Joystick
 from camera import Camera
 from recorder import Recorder
-from interpreter import Interpreter
+from inference import Inference
 import argparse
 # from shared.config import X, B, Y, RT, LEFTSTICK
 from typing import Final
@@ -30,7 +30,7 @@ def main():
 
     # recorder = Recorder(base_dir="data")
     try:
-        pilot = Interpreter("./output")
+        pilot = Inference("./output")
     except Exception:
         pilot = None
 
