@@ -2,8 +2,6 @@ import logging
 import numpy as np
 from pathlib import Path
 import cv2
-# from shared.models import ModelConfig
-# from shared.network import ConvNetwork
 from cnn.transformer import DataTransformer
 from cnn.models import ModelConfig
 from cnn.network import DeepConvNet

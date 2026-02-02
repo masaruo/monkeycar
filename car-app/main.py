@@ -6,7 +6,6 @@ from camera import Camera
 from recorder import Recorder
 from inference import Inference
 import argparse
-# from shared.config import X, B, Y, RT, LEFTSTICK
 from typing import Final
 
 # Joystick Settings
