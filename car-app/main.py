@@ -34,7 +34,7 @@ def main():
     with Joystick() as js, Motor() as motor, Camera() as cam:
         try:
             while True:
-                js.poll()  # 1フレームにつき1回だけイベント更新
+                js.poll()
                 x_pressed = js.get_button(X) #! X = autopilot
                 if x_pressed and not prev_x_pressed:
                     logger.info(f"AutoPilot mode {'stop' if is_auto else 'start'}")
