@@ -1,11 +1,10 @@
 import logging
 import time
 from typing import Self
-# from shared.config import ROTATE
 import numpy as np
 from picamera2 import Picamera2
-# import cv2
 from typing import Final
+
 
 ROTATE: Final = 2
 
@@ -30,14 +29,9 @@ class Camera:
         frame = self.picam2.capture_array("main")
         if frame is None:
             raise RuntimeError("Failed to capture frame")
-        frame = np.rot90(frame, ROTATE)
-        
-        # 切り抜く代わりに「黒く塗る」方法を使ってください↓
-        frame[:120, :] = 0   # 上端10pxを黒く
-        # frame[-10:, :] = 0  # 下端10pxを黒く (車体隠し含むなら -40 とか)
-        # frame[:, :10] = 0   # 左端10pxを黒く
-        # frame[:, -10:] = 0  # 右端10pxを黒く
-        
+        frame = np.rot90(frame, ROTATE) #カメラの設置が逆さま
+        frame[:120, :] = 0 #上端のマスク
+
         return frame
 
     def close(self) -> None:

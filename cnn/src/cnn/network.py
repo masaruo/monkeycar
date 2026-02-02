@@ -253,7 +253,7 @@ class DeepConvNet:
     def predict(self, x, train_flag=False):
         for key, layer in self.layers.items():
             if "Dropout" in key:
-                x = layer.forward(x, train_flag=True)
+                x = layer.forward(x, train_flag=train_flag)
             else:
                 x = layer.forward(x)
         return x
