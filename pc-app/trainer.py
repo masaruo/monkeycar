@@ -174,7 +174,7 @@ class Trainer:
                 
                 self.optimizer.update(self.network.params, grads)
                 
-                loss = self.network.loss(batch.images, batch.labels)
+                loss = self.network.loss(batch.images, batch.labels, train_flag=True)
                 loss_sum += loss
                 count += 1
             
@@ -190,7 +190,7 @@ class Trainer:
         total_samples = 0
         
         for batch in self.test_loader:
-            loss = self.network.loss(batch.images, batch.labels)
+            loss = self.network.loss(batch.images, batch.labels, train_flag=False)
             
             batch_len = len(batch.images)
             total_loss = loss * batch_len
