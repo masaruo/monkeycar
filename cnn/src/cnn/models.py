@@ -23,6 +23,5 @@ class ModelConfig(BaseModel):
     
     # 訓練メタデータ
     num_samples: int | None = Field(default=None, description="Number of training samples")
-    epochs_trained: int | None = Field(default=None, description="Number of epochs trained")
     final_loss: float | None = Field(default=None, description="Final training loss")
     final_val_loss: float | None = Field(default=None, description="Final validation loss")

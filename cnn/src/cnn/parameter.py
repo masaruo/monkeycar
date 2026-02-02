@@ -15,3 +15,10 @@ class Parameter:
     @property
     def shape(self) -> tuple:
         return self.data.shape
+
+    def __repr__(self):
+        id_str = self.name if self.name else "Param"
+        shape_str = str(self.data.shape) if self.data else "None"
+        grad_status = "active" if self.grad else "inactive"
+
+        return f"<{id_str} shape=[{shape_str} grad={grad_status}]"
