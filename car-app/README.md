@@ -1,7 +1,6 @@
 
-スロットルの幅 RT = -1 - 1
-steering -1 to 1
-
+X = autopilot
+B = record
 
 ### Shared
 * sharedがアップデートされたら、`git pull`して変更をラズパイ上にも反映すること
