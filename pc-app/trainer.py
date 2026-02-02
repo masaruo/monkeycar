@@ -12,12 +12,11 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'data/session_1769995470',
-    'data/session_1769995560',
+    'session_shortcut_train',
 ]
 
 TEST_SESSIONS: Final = [
-    'data/session_1769995751',
+    'session_shortcut_test',
 ]
 
 

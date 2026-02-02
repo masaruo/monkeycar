@@ -4,6 +4,8 @@ from pathlib import Path
 import csv
 import numpy as np
 import cv2
+# from shared.models import DriveData
+from cnn.models import DriveData
 from cnn.transformer import DataTransformer
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,8 @@ class Recorder:
         self.csv_path = self.session_dir / "records.csv"
         self._init_csv()
 
+        # Initialize DataTransformer for resizing only (default 160x120)
+        # from shared.transformer import DataTransformer
         self.transformer = DataTransformer(image_size=(160, 120))
         
         logger.info(f"Recorder initialized: {self.session_id}")

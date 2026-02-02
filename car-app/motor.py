@@ -1,11 +1,9 @@
 from typing import Self, Final
 import logging
 from adafruit_servokit import ServoKit
-# api ref https://docs.circuitpython.org/projects/servokit/en/latest/api.html
 
-# from shared.config import MAX_SPEED, MAX_LEFT, MAX_RIGHT, STEERING_CENTER, STOP_SPEED
 
-SPEED_REDUCTION_RATIO: Final = 0.50
+SPEED_REDUCTION_RATIO: Final = 0.16
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
 STEERING_TRIM: Final = -10

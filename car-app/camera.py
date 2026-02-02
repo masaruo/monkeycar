@@ -1,11 +1,13 @@
 import logging
 import time
 from typing import Self
-from shared.config import ROTATE
+# from shared.config import ROTATE
 import numpy as np
 from picamera2 import Picamera2
-import cv2
+# import cv2
+from typing import Final
 
+ROTATE: Final = 2
 
 logger = logging.getLogger(__name__)
 

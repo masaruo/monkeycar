@@ -6,7 +6,16 @@ from camera import Camera
 from recorder import Recorder
 from interpreter import Interpreter
 import argparse
-from shared.config import X, B, Y, RT, LEFTSTICK
+# from shared.config import X, B, Y, RT, LEFTSTICK
+from typing import Final
+
+# Joystick Settings
+A: Final = 0
+B: Final = 1
+X: Final = 2
+Y: Final = 3
+RT: Final = 5
+LEFTSTICK: Final = 0
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +28,7 @@ def main():
     parser.add_argument("--record", action='store_true')
     args = parser.parse_args()
 
-    recorder = Recorder(base_dir="data")
+    # recorder = Recorder(base_dir="data")
     try:
         pilot = Interpreter("./output")
     except Exception:
@@ -34,7 +43,7 @@ def main():
     with Joystick() as js, Motor() as motor, Camera() as cam:
         try:
             while True:
-                js.poll()  # 1フレームにつき1回だけイベント更新
+                js.poll()
                 x_pressed = js.get_button(X) #! X = autopilot
                 if x_pressed and not prev_x_pressed:
                     logger.info(f"AutoPilot mode {'stop' if is_auto else 'start'}")
@@ -43,6 +52,9 @@ def main():
 
                 b_pressed = js.get_button(B) #! B = record
                 if b_pressed and not prev_b_pressed:
+                    if not is_recording:
+                        recorder = Recorder(base_dir="./data")
+
                     logger.info(f"Recording {'stop' if is_recording else 'start'}")
                     is_recording = not is_recording
                 prev_b_pressed = b_pressed
