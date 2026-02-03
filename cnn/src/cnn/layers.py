@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 def log_shapes(func):
     """
-    foward / backwardの入出力のSHAPEを出力するデコレーター
+    forward / backwardの入出力のSHAPEを出力するデコレーター
+    use as `LOG_LEVEL=DEBUG make`
     """
     @wraps(func)
     def _wrapper(self, x: np.ndarray, *args, **kwargs):
@@ -55,7 +56,8 @@ class Layer(ABC):
 
 
 class Affine(Layer):
-    def __init__(self, input_size: int, output_size: int) -> None:
+    """全結合層"""
+    def __init__(self, input_size: int, output_size: int, name: str="affine") -> None:
         # 親クラスinitにてトレイニングかどうかのフラグを持つので、それを初期化。トレイニングならDROPOUT
         super().__init__()
         # Heの初期値 p183 Reluの場合これがいいらしい
@@ -65,8 +67,8 @@ class Affine(Layer):
         # ouput-sizeの行列
         b_data: np.ndarray = np.zeros(output_size)
 
-        self.W = Parameter(W_data, name="W")
-        self.b = Parameter(b_data, name='b')
+        self.W = Parameter(W_data, name=f"{name}:W")
+        self.b = Parameter(b_data, name=f"{name}:b")
 
         # 順伝播時に初期化、逆伝播のために保持
         self.x = None
@@ -81,9 +83,12 @@ class Affine(Layer):
     def backward(self, dout: np.ndarray) -> np.ndarray:
         assert self.x is not None, "x must not be None"
 
+        # xへの逆伝播を継続
         dx = np.dot(dout, self.W.data.T)
 
+        # Weightsの勾配をParamクラスに保存。最終的にはoptimizerによって、勾配＊学習レシオ分だけウェイトを変更
         self.W.grad = np.dot(self.x.T, dout)
+        # バイアルの勾配
         self.b.grad = np.sum(dout, axis=0)
 
         return dx
@@ -158,7 +163,7 @@ class Pooling(Layer):
         return dx
 
 class Convolution(Layer):
-    def __init__(self, in_channels: int, out_channels: int, filter_size: int, stride: int=1, pad: int=0):
+    def __init__(self, in_channels: int, out_channels: int, filter_size: int, stride: int=1, pad: int=0, name: str="Conv"):
         super().__init__()
         self.stride = stride
         self.pad = pad
@@ -168,8 +173,8 @@ class Convolution(Layer):
         W_data = scale * np.random.randn(out_channels, in_channels, filter_size, filter_size)
         b_data = np.zeros(out_channels)
 
-        self.W = Parameter(W_data, name="W")
-        self.b = Parameter(b_data, name='b')
+        self.W = Parameter(W_data, name=f"{name} W:")
+        self.b = Parameter(b_data, name=f"{name} b:")
 
         self.x = None
         self.col = None

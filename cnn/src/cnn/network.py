@@ -14,41 +14,40 @@ class CarConvNet:
     構成: Conv -> Relu -> Pool (x3) -> Flatten -> Affine -> Relu -> Dropout -> Affine -> MSE
     """
     def __init__(self, input_dim: tuple[int, int, int] = (3, 120, 160),
-                conv_params: list[dict[str, int]] = [
-                    {'filter_num':16, 'filter_size':3, 'pad':1, 'stride':2},
-                    {'filter_num':32, 'filter_size':3, 'pad':1, 'stride':1},
-                    {'filter_num':64, 'filter_size':3, 'pad':1, 'stride':1},
-                 ],
                  hidden_size: int=100, output_size: int=2) -> None:
-
-        self.layers = []
-        c, h, w = input_dim
-
-        # 畳み込み層
-        for i, param in enumerate(conv_params):
-            fn = param['filter_num']
-            fs = param['filter_size']
-            pad = param['pad']
-            stride = param['stride']
-
-            self.layers.append(Convolution(c, fn, fs, stride, pad))
-            self.layers.append(Relu())
-            self.layers.append(Pooling(pool_h=2, pool_w=2, stride=2))
-
-            h, w = self._get_convolution_outsize(h, w, fs, stride, pad)
-            h, w = int(h/2), int(w/2)
-            c = fn
-
-        # 全結合層
-        flat_size = c * h * w
-
-        self.layers.append(Flatten())
-        self.layers.append(Affine(flat_size, hidden_size))
-        self.layers.append(Relu())
-        self.layers.append(Dropout(0.5))
-        self.layers.append(Affine(hidden_size, output_size))
-
+        input_channels, input_h, input_w = input_dim
+        
+        
+        self.Convlayers = [
+            # Conv1 (out_channleはハイパーパラメーター)
+            Convolution(in_channels=input_channels, out_channels=16, filter_size=3, stride=2, pad=1, name="Conv1"),
+            Relu(),
+            Pooling(pool_h=2, pool_w=2, stride=2),
+            # Conv2
+            Convolution(in_channels=16, out_channels=32, filter_size=3, stride=1, pad=0, name="Conv2"),
+            Relu(),
+            Pooling(pool_h=2, pool_w=2, stride=2),
+            # Conv3
+            Convolution(in_channels=32, out_channels=64, filter_size=3, stride=1, pad=0, name="Conv3"),
+            Relu(),
+            Pooling(pool_h=2, pool_w=2, stride=2),
+        ]
+        flatten_dim = self.__get_flatten_dim(input_dim=input_dim)
+        self.AffineLayers = [
+            Flatten(),
+            Affine(input_size=flatten_dim, output_size=hidden_size, name="Affine1"),
+            Relu(),
+            Dropout(0.5),
+            Affine(input_size=hidden_size, output_size=output_size, name="Affine2"),
+        ]
+        self.layers = self.Convlayers + self.AffineLayers
         self.last_layer = MeanSquaredError()
+
+    def __get_flatten_dim(self, input_dim) -> int:
+        dummy_x: np.ndarray = np.zeros((1, *input_dim))
+        for layer in self.Convlayers:
+            dummy_x = layer.forward(dummy_x)
+        return dummy_x.size
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         for layer in self.layers:

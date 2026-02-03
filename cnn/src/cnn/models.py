@@ -13,7 +13,7 @@ class ModelConfig(BaseModel):
     # 推論・前処理用
     image_size: tuple[int, int] = Field(default=(160, 120), description="[Width, Height]")
     norm_divisor: float = Field(default=255.0, gt=0, description="Normalization divisor")
-    image_shape: tuple[int, int, int] | None = Field(default=None, description="[Height, Width, Channels]")
+    # image_shape: tuple[int, int, int] | None = Field(default=None, description="[Height, Width, Channels]")
     
     # 制御値の正規化用 - 訓練後に設定される（デフォルト値なし）
     steering_min: float | None = Field(default=None, description="Min steering value")
