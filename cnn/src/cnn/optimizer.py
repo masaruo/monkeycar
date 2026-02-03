@@ -1,9 +1,27 @@
 import numpy as np
-from abc import ABC, abstractmethod
 from cnn.parameter import Parameter
+from abc import ABC, abstractmethod
 
 
-class Adam:
+class Optimizer(ABC):
+    @abstractmethod
+    def update(self, params: list[Parameter]) -> None:
+        pass
+
+
+class SGD(Optimizer):
+    def __init__(self, lr: float=0.001):
+        self.lr = lr
+        
+    def update(self, params: list[Parameter]) -> None:
+        for param in params:
+            if param.grad is None:
+                continue
+
+            param.data -= self.lr * param.grad
+
+
+class Adam(Optimizer):
     """Adam p175"""
     def __init__(self, lr: float=0.001, beta1: float=0.9, beta2: float=0.999):
         self.lr = lr
