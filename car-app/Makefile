@@ -19,7 +19,6 @@ clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 
-# 仮想環境を含む完全な削除
 fclean: clean
 	rm -rf .venv
 
