@@ -1,30 +1,20 @@
-.PHONY: setup run record install clean fclean all
+.PHONY: all, run, autopilot, record, install, clean, calibrate, clean-data, fclean, lint, lint-strict
 
 all: run
 
-# # プロジェクトの初期化（libcameraへのアクセスを許可する仮想環境を作成）
-# setup:
-# 	rm -rf .venv
-# 	uv venv --system-site-packages
-# 	uv add tensorflow opencv-python pillow numpy pygame
-
-# 通常実行（自律走行を想定）
 run:
 	uv run python main.py
 
 autopilot:
 	uv run python main.py --autopilot
 
-# データ記録モード（引数や環境変数を渡す場合に拡張可能）
 record:
 	uv run python main.py --record
 
-# 依存関係の同期
 install:
 	uv venv --system-site-packages
 	uv sync
 
-# キャッシュの削除
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
@@ -38,3 +28,11 @@ clean-data:
 
 calibrate:
 	uv run python motor.py
+
+lint:
+	-uv run ruff check .
+	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+
+lint-strict:
+	-uv run ruff check .
+	uv run mypy . --strict
