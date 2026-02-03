@@ -1,198 +1,223 @@
-    image_size: tuple[int, int] = Field(..., description="[Width, Height]")
-    image_shape: List[int] = Field(description="[Height,  Width, Channels]")
-    
-    # 制御値の正規化用
-    steering_min: float = Field(..., ge=-1.0, le=1.0)
-    steering_max: float = Field(..., ge=-1.0, le=1.0)
-    throttle_min: float = Field(..., ge=-1.0, le=1.0)
-    throttle_max: float = Field(..., ge=-1.0, le=1.0)
-    normalize_param: float
-    # 訓練メタデータ (Optional)
-    num_samples: int
-    epochs_trained: int
-    final_loss: float
-    final_val_loss: float
+# Monkeycar PC Training App
 
-# PC用訓練パイプライン
+ラズパイで収集したデータをPCで学習し、学習済みモデルをラズパイに転送するための訓練パイプラインです。
 
-ホストPC上で行う機械学習訓練スクリプトです。Donkeycar方式と同様です。
+## 📋 必要環境
 
-## セットアップ
+- Python 3.11以上
+- [uv](https://github.com/astral-sh/uv) (Pythonパッケージマネージャー)
+
+## 🚀 セットアップ
+
+### 1. 依存関係のインストール
 
 ```bash
-# パッケージのインストール
-make sync-pc
-
-# または開発モード（Jupyter含む）
-make sync-dev
+make install
+# または
+uv sync
 ```
 
-## 訓練パイプライン
+## 📂 プロジェクト構造
 
-### 1️⃣  データセット確認
+```
+pc-app/
+├── trainer.py           # 学習スクリプト
+├── loader.py            # データローダー
+├── Makefile            # タスクランナー
+├── sync.sh             # ラズパイとのデータ同期スクリプト
+├── pyproject.toml      # プロジェクト設定
+├── data/               # 学習データ（ラズパイから取得）
+│   ├── session_shortcut_train/
+│   └── session_shortcut_test/
+└── weights_bin/        # 訓練済みモデルの出力先
+    ├── params.pkl      # ネットワークの重み
+    └── config.json     # モデル設定
+```
+
+## 🔄 ワークフロー
+
+### 1️⃣ ラズパイからデータを取得
 
 ```bash
-cd src/pc
-python -c "from data_loader import DataLoader; loader = DataLoader('../../../data'); images, s, t = loader.load_sessions(); print(loader.get_stats())"
+make pull
+# または
+./sync.sh pull
 ```
 
-### 2️⃣  データセット可視化
+ラズパイ (`team40@team40.local`) から学習データを `./data` にダウンロードします。
+
+### 2️⃣ モデルを訓練
 
 ```bash
-cd src/pc
-python visualize.py
+make train
+# または
+make
 ```
 
-実行後、以下が生成されます:
-- `dataset_samples.png` - サンプル画像
-- `dataset_statistics.png` - ステアリング/スロットル分布
+デフォルトで以下の設定で訓練を実行:
+- オプティマイザー: `SGD`
+- 学習率: `0.01`
+- バッチサイズ: `32`
+- エポック数: `150`
 
-### 3️⃣  モデル訓練
+#### デバッグモードで実行
 
 ```bash
-cd src/pc
-python model_train.py
+LOG_LEVEL=debug make train
 ```
 
-出力:
-- `models/model.h5` - Kerasモデル
-- `models/config.json` - 訓練設定（正規化パラメータ含む）
+### 3️⃣ 訓練済みモデルをラズパイに転送
 
-#### 訓練パラメータをカスタマイズする場合:
+```bash
+make push
+# または
+./sync.sh push
+```
 
-[model_train.py](model_train.py) の最後を編集:
+`./weights_bin` 内のモデルファイルをラズパイに転送します。
+
+## ⚙️ カスタマイズ
+
+### オプティマイザーの変更
+
+`trainer.py` の最後の部分を編集:
 
 ```python
+# Adam を使う場合
 trainer = Trainer(
-    data_dir='../../../data',
-    image_size=(160, 120),      # 画像サイズ
-    batch_size=32,              # バッチサイズ
-    epochs=100,                 # エポック数
-    val_split=0.2,              # 検証データの割合
-    output_dir='./models',
+    data_dir="./data",
+    batch_size=32,
+    learning_rate=0.0001,
+    optimizer=Adam
+)
+
+# SGD を使う場合
+trainer = Trainer(
+    data_dir="./data",
+    batch_size=32,
+    learning_rate=0.01,
+    optimizer=SGD
 )
 ```
 
-### 4️⃣  TFLite変換（ラズパイ用）
+### 訓練データセットの変更
 
-```bash
-cd src/pc
-python model_convert.py
-```
-
-出力:
-- `models/model.tflite` - ラズパイで実行可能なモデル
-- `models/config.json` - 設定ファイル（推論時に必要）
-
-### 5️⃣  ラズパイに転送
-
-```bash
-scp src/pc/models/model.tflite pi@raspberrypi.local:~/minicar-car/src/car/models/
-scp src/pc/models/config.json pi@raspberrypi.local:~/minicar-car/src/car/models/
-```
-
----
-
-## スクリプト説明
-
-### `data_loader.py`
-
-複数のセッションからデータを読み込みます:
+`trainer.py` の `TRAIN_SESSIONS` と `TEST_SESSIONS` を編集:
 
 ```python
-from data_loader import DataLoader
+TRAIN_SESSIONS: Final = [
+    'session_shortcut_train',
+    # 'session_YYYYMMDD',  # 追加のセッション
+]
 
-loader = DataLoader('../../../data', image_size=(160, 120))
-images, steerings, throttles = loader.load_sessions()
+TEST_SESSIONS: Final = [
+    'session_shortcut_test',
+]
 ```
 
-**特徴:**
-- 複数セッション自動読み込み
-- 画像の自動リサイズ・正規化
-- 統計情報の計算
+## 🧹 クリーンアップ
 
-### `model_train.py`
+### キャッシュをクリア
 
-CNNモデルを訓練します:
+```bash
+make clean
+```
 
+`__pycache__`, `.mypy_cache`, `.ruff_cache` などを削除します。
+
+### 完全クリーンアップ（仮想環境も削除）
+
+```bash
+make fclean
+```
+
+`.venv` と `uv.lock` も削除されます。
+
+### データとモデルを削除
+
+```bash
+make clean-data
+```
+
+`./data`, `./weights_bin` などを削除します。
+
+## 🧪 コード品質チェック
+
+### 通常のリント
+
+```bash
+make lint
+```
+
+`ruff` と `mypy` でコードをチェックします。
+
+### 厳格なリント
+
+```bash
+make lint-strict
+```
+
+より厳格な型チェックを実行します。
+
+## 📊 出力ファイル
+
+訓練後、`weights_bin/` に以下が生成されます:
+
+- **params.pkl** - ネットワークの重みパラメータ
+- **config.json** - モデル設定（画像サイズ、ステアリング/スロットル範囲、損失値など）
+
+```json
+{
+  "image_size": [160, 120],
+  "steering_min": -1.0,
+  "steering_max": 1.0,
+  "throttle_min": 0.0,
+  "throttle_max": 0.5,
+  "num_samples": 1234,
+  "final_loss": 0.2039,
+  "final_val_loss": 0.1763
+}
+```
+
+## 🐛 トラブルシューティング
+
+### ラズパイに接続できない
+
+`sync.sh` の接続設定を確認:
+```bash
+PI_USER=team40
+PI_HOST="team40.local"
+```
+
+### メモリ不足エラー
+
+バッチサイズを小さくする:
 ```python
-from model_train import Trainer
-
-trainer = Trainer(data_dir='../../../data')
-model, config = trainer.run()
+trainer = Trainer(batch_size=16, ...)  # 32 → 16
 ```
 
-**モデル構成:**
-- 入力: 160×120 RGB画像
-- 3層CNN + 全結合層
-- 出力: [ステアリング, スロットル]
-- Early Stopping で過学習防止
+### データが見つからない
 
-**出力の正規化:**
-- ステアリング: [-1, 1]
-- スロットル: [0, 1]
-
-### `model_convert.py`
-
-KerasモデルをTFLiteに変換します:
-
+`data/` ディレクトリに正しいセッションフォルダがあるか確認:
 ```bash
-python model_convert.py
+ls -la data/
 ```
 
-**変換オプション:**
-- `quantize=True`: 量子化で高速化・省メモリ
+## 📝 Makeコマンド一覧
 
-### `visualize.py`
+| コマンド | 説明 |
+|---------|------|
+| `make` または `make train` | モデルを訓練 |
+| `make install` | 依存関係をインストール |
+| `make pull` | ラズパイからデータを取得 |
+| `make push` | モデルをラズパイに転送 |
+| `make clean` | キャッシュを削除 |
+| `make fclean` | 完全クリーンアップ |
+| `make clean-data` | データとモデルを削除 |
+| `make lint` | コード品質チェック |
+| `make lint-strict` | 厳格な型チェック |
 
-データセット統計を可視化:
+## 🔗 関連プロジェクト
 
-```bash
-python visualize.py
-```
-
----
-
-## トラブルシューティング
-
-### ❌ "No module named 'tensorflow'"
-
-```bash
-make sync-pc  # パッケージをインストール
-```
-
-### ❌ データが読み込めない
-
-- `records.csv` と `image/` が同じディレクトリにあるか確認
-- 画像ファイル名が CSV の `image` 列と一致しているか確認
-
-```bash
-# データ構造確認
-ls -la data/session_1768186952/
-ls -la data/session_1768186952/image/ | head
-```
-
-### ❌ メモリ不足エラー
-
-バッチサイズを減らす:
-
-```python
-trainer = Trainer(batch_size=16)  # 32 → 16
-```
-
-### ❌ TFLiteモデルがラズパイで動かない
-
-`config.json` も一緒に転送しているか確認:
-
-```bash
-scp src/pc/models/config.json pi@raspberrypi.local:~/minicar-car/src/car/models/
-```
-
----
-
-## 次のステップ
-
-1. ラズパイで [minicar-car](https://github.com/your-repo/minicar-car) の `inference.py` を実装
-2. 推論スクリプトで `model.tflite` と `config.json` を読み込む
-3. `main.py` で自動走行を実行
-
+- `../cnn` - CNNモデルとオプティマイザーの実装
+- ラズパイ側アプリ (`team40.local:/home/team40/monkeycar/car-app/`)

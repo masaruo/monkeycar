@@ -1,8 +1,7 @@
 import os
-import numpy as np
 from loader import BatchLoader
 from cnn.network import CarConvNet
-from cnn.optimizer import Adam
+from cnn.optimizer import Adam, SGD, Optimizer
 from cnn.models import ModelConfig
 from tqdm import tqdm, trange
 import logging
@@ -18,19 +17,20 @@ TEST_SESSIONS: Final = [
     'session_shortcut_test',
 ]
 
-
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, log_level), format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
 class Trainer:
     def __init__(
         self,
+        optimizer,
         data_dir="../data",
-        output_dir="weights_bin",
+        output_dir="models",
         image_size=(160, 120),
         batch_size=32,
-        learning_rate=0.0001
+        learning_rate=0.0001,
         ) -> None:
         """
         学習管理クラス
@@ -41,12 +41,13 @@ class Trainer:
             image_size (tuple): 画像サイズ (Width, Height)
             batch_size (int): ミニバッチサイズ
             learning_rate (float): 学習率
+            optimizer (type): Optimizer class (e.g., Adam, SGD)
         """
         self.data_dir = data_dir
         self.output_dir = output_dir
         self.image_size = image_size
         self.batch_size = batch_size
-        self.optimizer = Adam(learning_rate)
+        self.optimizer = optimizer(lr=learning_rate)
         self.final_loss = 0.0
         self.final_val_loss = 0.0
 
@@ -78,15 +79,8 @@ class Trainer:
             """CNNの構築"""
             input_dim = (3, self.image_size[1], self.image_size[0]) #(3, 120, 160)
 
-            conv_params = [
-                {'filter_num': 16, 'filter_size': 3, 'stride': 2, 'pad': 1},
-                {'filter_num': 32, 'filter_size': 3, 'stride': 2, 'pad': 1},
-                {'filter_num': 64, 'filter_size': 3, 'stride': 2, 'pad': 1},
-            ]
-
             self.network = CarConvNet(
                 input_dim=input_dim,
-                conv_params=conv_params,
                 hidden_size=100,
                 output_size=2,
             )
@@ -134,11 +128,10 @@ class Trainer:
             loss = self.network.loss(batch.images, batch.labels)
 
             batch_len = len(batch.images)
-            total_loss = loss * batch_len
+            total_loss += loss * batch_len
             total_samples += batch_len
 
         avg_val_loss = total_loss / total_samples if total_samples > 0 else 0
-        # logger.info(f"Test Loss:[{avg_val_loss:.5f}]")
         self.final_val_loss = avg_val_loss
 
     def save_weights(self, param_filename="params.pkl", config_filename="config.json"):
@@ -173,8 +166,9 @@ class Trainer:
 
 if __name__ == "__main__":
     try:
-        trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001)
-        trainer.train(epochs=20)
+        # trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001, optimizer=Adam)
+        trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.01, optimizer=SGD)
+        trainer.train(epochs=1)
         trainer.save_weights()
 
     except Exception as e:

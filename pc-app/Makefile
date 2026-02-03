@@ -13,13 +13,12 @@ install:
 clean:
 	rm -rf .pytest_cache .ruff_cache *.pyc .uv-cache .mypy_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	@echo "✓ クリーンアップ完了"
 
 fclean: clean
 	rm -rf .venv uv.lock
 
 clean-data:
-	rm -rf ./data ./output ./model ./weights_bin
+	rm -rf ./data ./models
 
 pull:
 	./sync.sh pull
