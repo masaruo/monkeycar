@@ -4,7 +4,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def im2col(input_data: np.ndarray, filter_h: int, filter_w: int, stride: int=1, pad: int=0) -> np.ndarray:
+
+def im2col(
+    input_data: np.ndarray, filter_h: int, filter_w: int, stride: int = 1, pad: int = 0
+) -> np.ndarray:
     """Parameters
     ----------
     input_data : (データ数, チャンネル, 高さ, 幅)の4次元配列
@@ -21,15 +24,15 @@ def im2col(input_data: np.ndarray, filter_h: int, filter_w: int, stride: int=1, 
     out_h = (H + 2 * pad - filter_h) // stride + 1
     out_w = (W + 2 * pad - filter_w) // stride + 1
 
-    img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
+    img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], "constant")
     col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
 
     for y in range(filter_h):
         y_max = y + stride * out_h
         for x in range(filter_h):
             x_max = x + stride * out_w
-            col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride] #???
-    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1) #???
+            col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]  # ???
+    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)  # ???
 
     logger.debug(
         f"[{__name__}.im2col] IN:{input_data.shape} "
@@ -37,6 +40,7 @@ def im2col(input_data: np.ndarray, filter_h: int, filter_w: int, stride: int=1, 
     )
 
     return col
+
 
 def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
     """
@@ -54,17 +58,19 @@ def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
     img :
     """
     N, C, H, W = input_shape
-    out_h = (H + 2*pad - filter_h)//stride + 1
-    out_w = (W + 2*pad - filter_w)//stride + 1
-    col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(0, 3, 4, 5, 1, 2)
+    out_h = (H + 2 * pad - filter_h) // stride + 1
+    out_w = (W + 2 * pad - filter_w) // stride + 1
+    col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(
+        0, 3, 4, 5, 1, 2
+    )
 
-    img = np.zeros((N, C, H + 2*pad + stride - 1, W + 2*pad + stride - 1))
+    img = np.zeros((N, C, H + 2 * pad + stride - 1, W + 2 * pad + stride - 1))
     for y in range(filter_h):
-        y_max = y + stride*out_h
+        y_max = y + stride * out_h
         for x in range(filter_w):
-            x_max = x + stride*out_w
+            x_max = x + stride * out_w
             img[:, :, y:y_max:stride, x:x_max:stride] += col[:, :, y, x, :, :]
-    out = img[:, :, pad:H + pad, pad:W + pad]
+    out = img[:, :, pad : H + pad, pad : W + pad]
     logger.debug(
         f"[{__name__}.col2im] IN:{col.shape} "
         f"OUT:{out.shape} (fh={filter_h}, fw={filter_w}, stride={stride}, pad={pad})"

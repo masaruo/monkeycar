@@ -4,15 +4,18 @@ from abc import ABC, abstractmethod
 
 
 class Optimizer(ABC):
+    def __init__(self, lr: float):
+        self.lr = lr
+
     @abstractmethod
     def update(self, params: list[Parameter]) -> None:
         pass
 
 
 class SGD(Optimizer):
-    def __init__(self, lr: float=0.001):
+    def __init__(self, lr: float = 0.001):
         self.lr = lr
-        
+
     def update(self, params: list[Parameter]) -> None:
         for param in params:
             if param.grad is None:
@@ -23,7 +26,8 @@ class SGD(Optimizer):
 
 class Adam(Optimizer):
     """Adam p175"""
-    def __init__(self, lr: float=0.001, beta1: float=0.9, beta2: float=0.999):
+
+    def __init__(self, lr: float = 0.001, beta1: float = 0.9, beta2: float = 0.999):
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
@@ -35,7 +39,11 @@ class Adam(Optimizer):
     def update(self, params: list[Parameter]) -> None:
         self.iter += 1
 
-        lr_t  = self.lr * np.sqrt(1.0 - self.beta2**self.iter) / (1.0 - self.beta1**self.iter)
+        lr_t = (
+            self.lr
+            * np.sqrt(1.0 - self.beta2**self.iter)
+            / (1.0 - self.beta1**self.iter)
+        )
 
         for param in params:
             if param.grad is None:
@@ -43,7 +51,7 @@ class Adam(Optimizer):
 
             key = id(param)
 
-            #初回は０で初期化
+            # 初回は０で初期化
             if key not in self.m:
                 self.m[key] = np.zeros_like(param.data)
                 self.v[key] = np.zeros_like(param.data)

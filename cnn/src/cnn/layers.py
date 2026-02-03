@@ -13,17 +13,19 @@ def log_shapes(func):
     forward / backwardの入出力のSHAPEを出力するデコレーター
     use as `LOG_LEVEL=DEBUG make`
     """
+
     @wraps(func)
     def _wrapper(self, x: np.ndarray, *args, **kwargs):
         method_name = func.__name__
         result = func(self, x, *args, **kwargs)
 
-        if hasattr(self, 'W') and hasattr(self, 'b'):
+        if hasattr(self, "W") and hasattr(self, "b"):
             log_msg = f"[{self.__class__.__name__}] {method_name} IN[{x.shape}]:W[{self.W.data.shape}]:b[{self.b.data.shape}]:OUT[{result.shape}]"
         else:
             log_msg = f"[{self.__class__.__name__}] {method_name} IN[{x.shape}] | OUT[{result.shape}]"
         logger.debug(log_msg)
         return result
+
     return _wrapper
 
 
@@ -33,21 +35,21 @@ class Layer(ABC):
 
     def train(self) -> None:
         self.training = True
-        
+
     def eval(self) -> None:
         self.training = False
 
     @abstractmethod
-    def forward(self, x:np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
-    def backward(self, dout:np.ndarray) -> np.ndarray:
+    def backward(self, dout: np.ndarray) -> np.ndarray:
         pass
 
     def parameters(self) -> list[Parameter]:
         params = []
-        for name, value in vars(self).items(): #vars()で__dict__が取れるらしい？！
+        for name, value in vars(self).items():  # vars()で__dict__が取れるらしい？！
             if isinstance(value, Parameter):
                 if value.name is None:
                     value.name = name
@@ -57,7 +59,8 @@ class Layer(ABC):
 
 class Affine(Layer):
     """全結合層"""
-    def __init__(self, input_size: int, output_size: int, name: str="affine") -> None:
+
+    def __init__(self, input_size: int, output_size: int, name: str = "affine") -> None:
         # 親クラスinitにてトレイニングかどうかのフラグを持つので、それを初期化。トレイニングならDROPOUT
         super().__init__()
         # Heの初期値 p183 Reluの場合これがいいらしい
@@ -74,7 +77,7 @@ class Affine(Layer):
         self.x = None
 
     @log_shapes
-    def forward(self, x:np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x
         out = np.dot(x, self.W.data) + self.b.data
         return out
@@ -102,22 +105,24 @@ class Relu(Layer):
     @log_shapes
     def forward(self, x: np.ndarray) -> np.ndarray:
         assert x is not None, "x cannot be None"
-        self.mask = (x <= 0)
+        self.mask = x <= 0
         out = x.copy()
         out[self.mask] = 0
         return out
 
     @log_shapes
-    def backward(self, dout:np.ndarray) -> np.ndarray:
+    def backward(self, dout: np.ndarray) -> np.ndarray:
         assert self.mask is not None, "Run forward before backward"
-        assert dout.shape == self.mask.shape, f"Shape mismatch: dout {dout.shape} != mask {self.mask.shape}"
+        assert dout.shape == self.mask.shape, (
+            f"Shape mismatch: dout {dout.shape} != mask {self.mask.shape}"
+        )
         dout[self.mask] = 0
         dx = dout
         return dx
 
 
 class Pooling(Layer):
-    def __init__(self, pool_h: int, pool_w: int, stride: int=1, pad: int=0) -> None:
+    def __init__(self, pool_h: int, pool_w: int, stride: int = 1, pad: int = 0) -> None:
         super().__init__()
         self.pool_h = pool_h
         self.pool_w = pool_w
@@ -134,7 +139,7 @@ class Pooling(Layer):
         out_w = int(1 + (W - self.pool_w) / self.stride)
 
         col = im2col(x, self.pool_h, self.pool_w, self.stride, self.pad)
-        col = col.reshape(-1, self.pool_h*self.pool_w)
+        col = col.reshape(-1, self.pool_h * self.pool_w)
 
         arg_max = np.argmax(col, axis=1)
         out = np.max(col, axis=1)
@@ -162,15 +167,28 @@ class Pooling(Layer):
 
         return dx
 
+
 class Convolution(Layer):
-    def __init__(self, in_channels: int, out_channels: int, filter_size: int, stride: int=1, pad: int=0, name: str="Conv"):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        filter_size: int,
+        stride: int = 1,
+        pad: int = 0,
+        name: str = "Conv",
+    ):
         super().__init__()
         self.stride = stride
         self.pad = pad
-        input_nodes = in_channels * filter_size * filter_size # 入力CH＊フィルター高さ＊フィルター幅
+        input_nodes = (
+            in_channels * filter_size * filter_size
+        )  # 入力CH＊フィルター高さ＊フィルター幅
         scale = np.sqrt(2.0 / input_nodes)
 
-        W_data = scale * np.random.randn(out_channels, in_channels, filter_size, filter_size)
+        W_data = scale * np.random.randn(
+            out_channels, in_channels, filter_size, filter_size
+        )
         b_data = np.zeros(out_channels)
 
         self.W = Parameter(W_data, name=f"{name} W:")
@@ -184,8 +202,8 @@ class Convolution(Layer):
     def forward(self, x: np.ndarray) -> np.ndarray:
         FN, C, FH, FW = self.W.data.shape
         N, C, H, W = x.shape
-        out_h = 1 + (H + 2*self.pad - FH) // self.stride
-        out_w = 1 + (W + 2*self.pad - FW) // self.stride
+        out_h = 1 + (H + 2 * self.pad - FH) // self.stride
+        out_w = 1 + (W + 2 * self.pad - FW) // self.stride
 
         col = im2col(x, FH, FW, self.stride, self.pad)
         col_W = self.W.data.reshape(FN, -1).T
@@ -215,6 +233,7 @@ class Convolution(Layer):
 
         return dx
 
+
 class Flatten(Layer):
     def __init__(self):
         super().__init__()
@@ -238,8 +257,8 @@ class Flatten(Layer):
 class MeanSquaredError:
     def __init__(self):
         self.loss = None
-        self.y = None # AIの予測値
-        self.t = None # 正解データ
+        self.y = None  # AIの予測値
+        self.t = None  # 正解データ
 
     def forward(self, y: np.ndarray, t: np.ndarray) -> float:
         self.t = t
@@ -248,11 +267,11 @@ class MeanSquaredError:
         # 誤差の計算: 0.5 * (予測 - 正解)^2 の平均
         # 0.5を掛けるのは、微分の計算を綺麗にするため（慣習）
         batch_size = self.y.shape[0]
-        self.loss = 0.5 * np.sum((self.y - self.t)**2) / batch_size
+        self.loss = 0.5 * np.sum((self.y - self.t) ** 2) / batch_size
 
         return self.loss
 
-    def backward(self, dout: float=1.0) -> np.ndarray:
+    def backward(self, dout: float = 1.0) -> np.ndarray:
         batch_size = self.t.shape[0]
 
         # 勾配: (予測 - 正解) / バッチサイズ
@@ -260,8 +279,9 @@ class MeanSquaredError:
 
         return dx
 
+
 class Dropout(Layer):
-    def __init__(self, dropout_ratio: float=0.5) -> None:
+    def __init__(self, dropout_ratio: float = 0.5) -> None:
         super().__init__()
         self.dropout_ratio = dropout_ratio
         self.mask = None

@@ -3,8 +3,13 @@ import cv2
 from typing import Optional
 from .models import ModelConfig
 
+
 class DataTransformer:
-    def __init__(self, config: Optional[ModelConfig] = None, image_size: tuple[int, int] = (160, 120)):
+    def __init__(
+        self,
+        config: Optional[ModelConfig] = None,
+        image_size: tuple[int, int] = (160, 120),
+    ):
         """
         Args:
             config: ModelConfig instance (required for normalization/denormalization)
@@ -15,20 +20,20 @@ class DataTransformer:
 
     def resize_image(self, image: np.ndarray) -> np.ndarray:
         """Resize image to target size if necessary.
-        
+
         Args:
             image: Input image (H, W, C)
-            
+
         Returns:
             Resized image (H, W, C)
         """
         # image_size is (Width, Height), shape is (Height, Width, Channel)
         target_w, target_h = self.image_size
         current_h, current_w = image.shape[:2]
-        
+
         if current_w == target_w and current_h == target_h:
             return image
-            
+
         return cv2.resize(image, self.image_size)
 
     def transform_image(self, image: np.ndarray) -> np.ndarray:
@@ -52,10 +57,12 @@ class DataTransformer:
         # Note: Batch dimension is NOT added here.
         # loader.py expects (C, H, W) to append to list.
         # interpreter.py will treat this as (C, H, W) and use expand_dims to make it (1, C, H, W).
-        
+
         return transposed
 
-    def normalize_labels(self, steering:  float | np.ndarray, throttle:  float | np.ndarray) -> tuple[float | np.ndarray, float | np.ndarray]:
+    def normalize_labels(
+        self, steering: float | np.ndarray, throttle: float | np.ndarray
+    ) -> tuple[float | np.ndarray, float | np.ndarray]:
         """Normalize physical values to model range.
         Supports both single float and numpy array inputs.
         """
@@ -79,7 +86,9 @@ class DataTransformer:
             return float(s_norm), float(t_norm)
         return s_norm, t_norm
 
-    def denormalize_labels(self, steering_norm: float, throttle_norm: float) -> tuple[float, float]:
+    def denormalize_labels(
+        self, steering_norm: float, throttle_norm: float
+    ) -> tuple[float, float]:
         """Convert model output back to physical values."""
         if not self.config:
             raise ValueError("ModelConfig is required for denormalization")
