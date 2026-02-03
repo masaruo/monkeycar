@@ -1,4 +1,8 @@
 import numpy as np
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 def im2col(input_data: np.ndarray, filter_h: int, filter_w: int, stride: int=1, pad: int=0) -> np.ndarray:
     """Parameters
@@ -26,13 +30,19 @@ def im2col(input_data: np.ndarray, filter_h: int, filter_w: int, stride: int=1, 
             x_max = x + stride * out_w
             col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride] #???
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1) #???
+
+    logger.debug(
+        f"[{__name__}.im2col] IN:{input_data.shape} "
+        f"OUT:{col.shape} (fh={filter_h}, fw={filter_w}, stride={stride}, pad={pad})"
+    )
+
     return col
 
 def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
     """
     Parameters
     ----------
-    col : 
+    col :
     input_shape : 入力データの形状（例：(10, 1, 28, 28)）
     filter_h :
     filter_w :
@@ -54,5 +64,10 @@ def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
         for x in range(filter_w):
             x_max = x + stride*out_w
             img[:, :, y:y_max:stride, x:x_max:stride] += col[:, :, y, x, :, :]
+    out = img[:, :, pad:H + pad, pad:W + pad]
+    logger.debug(
+        f"[{__name__}.col2im] IN:{col.shape} "
+        f"OUT:{out.shape} (fh={filter_h}, fw={filter_w}, stride={stride}, pad={pad})"
+    )
 
-    return img[:, :, pad:H + pad, pad:W + pad]
+    return out

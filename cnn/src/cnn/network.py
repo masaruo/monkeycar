@@ -49,12 +49,12 @@ class CarConvNet:
         self.layers.append(Affine(hidden_size, output_size))
 
         self.last_layer = MeanSquaredError()
-        
+
     def predict(self, x: np.ndarray) -> np.ndarray:
         for layer in self.layers:
             x = layer.forward(x)
         return x
-    
+
     def loss(self, x: np.ndarray, t: np.ndarray) -> float:
         y: np.ndarray = self.predict(x)
         return self.last_layer.forward(y, t)
@@ -69,7 +69,7 @@ class CarConvNet:
 
         for layer in reversed(self.layers):
             dout = layer.backward(dout)
-            
+
         return None
 
     def params(self) -> list[Parameter]:
@@ -83,7 +83,7 @@ class CarConvNet:
         for layer in self.layers:
             if hasattr(layer, 'train'):
                 layer.train()
-                
+
     def eval_mode(self) -> None:
         for layer in self.layers:
             if hasattr(layer, 'eval'):
@@ -91,18 +91,18 @@ class CarConvNet:
 
     def save_params(self, file_name: str="params.pkl") -> None:
         params_dict: dict[str, np.ndarray] = {}
-        
+
         for i, param in enumerate(self.params()):
             key: str = param.name if param.name else f"param_{i}"
             params_dict[key] = param.data
 
         with open(file_name, 'wb') as f:
             pickle.dump(params_dict, f)
-            
+
     def load_params(self, file_name: str="params.pkl") -> None:
         with open(file_name, 'rb') as f:
             params_dict: dict[str, np.ndarray] = pickle.load(f)
-        
+
         current_params: list[Parameter] = self.params()
 
         for i, param in enumerate(current_params):

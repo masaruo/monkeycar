@@ -1,11 +1,29 @@
 import numpy as np
 import logging
 from abc import ABC, abstractmethod
-from typing import Self
 from cnn.util import im2col, col2im
 from cnn.parameter import Parameter
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+
+def log_shapes(func):
+    """
+    foward / backwardの入出力のSHAPEを出力するデコレーター
+    """
+    @wraps(func)
+    def _wrapper(self, x: np.ndarray, *args, **kwargs):
+        method_name = func.__name__
+        result = func(self, x, *args, **kwargs)
+
+        if hasattr(self, 'W') and hasattr(self, 'b'):
+            log_msg = f"[{self.__class__.__name__}] {method_name} IN[{x.shape}]:W[{self.W.data.shape}]:b[{self.b.data.shape}]:OUT[{result.shape}]"
+        else:
+            log_msg = f"[{self.__class__.__name__}] {method_name} IN[{x.shape}] | OUT[{result.shape}]"
+        logger.debug(log_msg)
+        return result
+    return _wrapper
 
 
 class Layer(ABC):
@@ -19,11 +37,11 @@ class Layer(ABC):
         self.training = False
 
     @abstractmethod
-    def forward(self: Self, x:np.ndarray) -> np.ndarray:
+    def forward(self, x:np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
-    def backward(self: Self, dout:np.ndarray) -> np.ndarray:
+    def backward(self, dout:np.ndarray) -> np.ndarray:
         pass
 
     def parameters(self) -> list[Parameter]:
@@ -38,22 +56,29 @@ class Layer(ABC):
 
 class Affine(Layer):
     def __init__(self, input_size: int, output_size: int) -> None:
+        # 親クラスinitにてトレイニングかどうかのフラグを持つので、それを初期化。トレイニングならDROPOUT
         super().__init__()
-        scale = np.sqrt(2.0 / input_size)
-        W_data = scale * np.random.randn(input_size, output_size)
-        b_data = np.zeros(output_size)
+        # Heの初期値 p183 Reluの場合これがいいらしい
+        scale: float = np.sqrt(2.0 / input_size)
+        # 正規分布にしたがった行列（input size, output size)
+        W_data: np.ndarray = scale * np.random.randn(input_size, output_size)
+        # ouput-sizeの行列
+        b_data: np.ndarray = np.zeros(output_size)
 
         self.W = Parameter(W_data, name="W")
         self.b = Parameter(b_data, name='b')
 
+        # 順伝播時に初期化、逆伝播のために保持
         self.x = None
 
-    def forward(self: Self, x:np.ndarray) -> np.ndarray:
+    @log_shapes
+    def forward(self, x:np.ndarray) -> np.ndarray:
         self.x = x
         out = np.dot(x, self.W.data) + self.b.data
         return out
 
-    def backward(self: Self, dout: np.ndarray) -> np.ndarray:
+    @log_shapes
+    def backward(self, dout: np.ndarray) -> np.ndarray:
         assert self.x is not None, "x must not be None"
 
         dx = np.dot(dout, self.W.data.T)
@@ -65,18 +90,20 @@ class Affine(Layer):
 
 
 class Relu(Layer):
-    def __init__(self: Self) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.mask = None
 
-    def forward(self: Self, x: np.ndarray) -> np.ndarray:
+    @log_shapes
+    def forward(self, x: np.ndarray) -> np.ndarray:
         assert x is not None, "x cannot be None"
         self.mask = (x <= 0)
         out = x.copy()
         out[self.mask] = 0
         return out
 
-    def backward(self: Self, dout:np.ndarray) -> np.ndarray:
+    @log_shapes
+    def backward(self, dout:np.ndarray) -> np.ndarray:
         assert self.mask is not None, "Run forward before backward"
         assert dout.shape == self.mask.shape, f"Shape mismatch: dout {dout.shape} != mask {self.mask.shape}"
         dout[self.mask] = 0
@@ -95,6 +122,7 @@ class Pooling(Layer):
         self.x = None
         self.arg_max = None
 
+    @log_shapes
     def forward(self, x: np.ndarray) -> np.ndarray:
         N, C, H, W = x.shape
         out_h = int(1 + (H - self.pool_h) / self.stride)
@@ -112,6 +140,7 @@ class Pooling(Layer):
 
         return out
 
+    @log_shapes
     def backward(self, dout: np.ndarray) -> np.ndarray:
         assert self.arg_max is not None, "Pooling arg_max is None"
 
@@ -146,6 +175,7 @@ class Convolution(Layer):
         self.col = None
         self.col_W = None
 
+    @log_shapes
     def forward(self, x: np.ndarray) -> np.ndarray:
         FN, C, FH, FW = self.W.data.shape
         N, C, H, W = x.shape
@@ -164,6 +194,7 @@ class Convolution(Layer):
 
         return out
 
+    @log_shapes
     def backward(self, dout: np.ndarray) -> np.ndarray:
         FN, C, FH, FW = self.W.data.shape
         dout = dout.transpose(0, 2, 3, 1).reshape(-1, FN)
@@ -184,6 +215,7 @@ class Flatten(Layer):
         super().__init__()
         self.input_shape = None
 
+    @log_shapes
     def forward(self, x: np.ndarray) -> np.ndarray:
         # 入力の形状を記憶（(N, C, H, W)など）
         self.input_shape = x.shape
@@ -191,6 +223,7 @@ class Flatten(Layer):
         out = x.reshape(x.shape[0], -1)
         return out
 
+    @log_shapes
     def backward(self, dout: np.ndarray) -> np.ndarray:
         # 記憶しておいた形状に戻す
         dx = dout.reshape(*self.input_shape)
@@ -228,6 +261,7 @@ class Dropout(Layer):
         self.dropout_ratio = dropout_ratio
         self.mask = None
 
+    @log_shapes
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self.training:
             self.mask = np.random.rand(*x.shape) > self.dropout_ratio
@@ -235,5 +269,6 @@ class Dropout(Layer):
         else:
             return x * (1.0 - self.dropout_ratio)
 
+    @log_shapes
     def backward(self, dout: np.ndarray) -> np.ndarray:
         return dout * self.mask
