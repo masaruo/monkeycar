@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import NamedTuple, List, Optional, Generator
+from typing import NamedTuple, List, Optional, Generator, Self
 import random
 from pathlib import Path
 import numpy as np
@@ -29,7 +29,7 @@ class BatchLoader:
         self.batch_size = batch_size
         self.shuffle: bool = shuffle
 
-        self.samples = []
+        self.samples: list = []
 
         self._scan_sessions()
 
@@ -56,7 +56,7 @@ class BatchLoader:
 
         for d in sessions_dir:
             csv_path = d / 'records.csv'
-            if not csv_path.exists:
+            if not csv_path.exists():
                 logger.debug(f"Skipping {d.name}: records csv not found.")
                 continue
             try:

@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 class Trainer:
     def __init__(
         self,
-        optimizer,
-        data_dir="../data",
-        output_dir="models",
-        image_size=(160, 120),
-        batch_size=32,
-        learning_rate=0.0001,
+        optimizer: type[Optimizer],
+        data_dir: str="data",
+        output_dir: str="models",
+        image_size: tuple[int, int]=(160, 120),
+        batch_size: int=32,
+        learning_rate: float=0.0001,
         ) -> None:
         """
         学習管理クラス
@@ -47,7 +47,7 @@ class Trainer:
         self.output_dir = output_dir
         self.image_size = image_size
         self.batch_size = batch_size
-        self.optimizer = optimizer(lr=learning_rate)
+        self.optimizer = optimizer(learning_rate)
         self.final_loss = 0.0
         self.final_val_loss = 0.0
 
@@ -58,7 +58,7 @@ class Trainer:
         self._init_network()
 
 
-    def _prepare_data(self):
+    def _prepare_data(self) -> None:
         train_sessions = [Path(s).name for s in TRAIN_SESSIONS]
         self.train_loader = BatchLoader(
             data_dir=self.data_dir,
@@ -75,7 +75,7 @@ class Trainer:
             shuffle=False
         )
 
-    def _init_network(self):
+    def _init_network(self) -> None:
             """CNNの構築"""
             input_dim = (3, self.image_size[1], self.image_size[0]) #(3, 120, 160)
 
@@ -85,14 +85,14 @@ class Trainer:
                 output_size=2,
             )
 
-    def train(self, epochs: int=20):
+    def train(self, epochs: int=20) -> None:
         logging.info(f"\nStart Training for {epochs} iterations...")
         epoch_bar = trange(epochs, desc="Training")
 
         for epoch in epoch_bar:
             self.network.train_mode()
 
-            loss_sum = 0
+            loss_sum = 0.0
             count = 0
 
             batch_bar = tqdm(self.test_loader, leave=False, desc=f"{epoch+1}")
@@ -118,10 +118,10 @@ class Trainer:
 
         self.save_weights()
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         self.network.eval_mode()
 
-        total_loss = 0
+        total_loss = 0.0
         total_samples = 0
 
         for batch in self.test_loader:
@@ -134,7 +134,7 @@ class Trainer:
         avg_val_loss = total_loss / total_samples if total_samples > 0 else 0
         self.final_val_loss = avg_val_loss
 
-    def save_weights(self, param_filename="params.pkl", config_filename="config.json"):
+    def save_weights(self, param_filename: str="params.pkl", config_filename: str="config.json") -> None:
         os.makedirs(self.output_dir, exist_ok=True)
 
         param_path = os.path.join(self.output_dir, param_filename)
