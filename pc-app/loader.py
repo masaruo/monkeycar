@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import NamedTuple, List, Optional, Generator, Self
+from typing import NamedTuple, List, Optional, Generator
 import random
 from pathlib import Path
 import numpy as np

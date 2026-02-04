@@ -59,15 +59,6 @@ class Trainer:
 
 
     def _prepare_data(self) -> None:
-        config = ModelConfig(
-            image_size=self.image_size,
-            steering_min = -1.0,
-            steering_max = 1.0,
-            throttle_min = 0.0,
-            throttle_max = 1.0,
-        )
-
-
         train_sessions = [Path(s).name for s in TRAIN_SESSIONS]
         self.train_loader = BatchLoader(
             data_dir=self.data_dir,
