@@ -4,9 +4,9 @@ from typing import NamedTuple, List, Optional, Generator, Self
 import random
 from pathlib import Path
 import numpy as np
-import cv2
 import pandas as pd
-from cnn.transformer import DataTransformer
+from PIL import Image
+from cnn.util import normalize
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ class Batch(NamedTuple):
 class BatchLoader:
     def __init__(
         self,
-        transformer: DataTransformer,
         data_dir: str | Path = "./data",
         target_sessions: Optional[List[str]] = None,
         batch_size: int = 32,
@@ -37,8 +36,6 @@ class BatchLoader:
 
         self.num_samples = len(self.samples)
         self.steps_per_epoch = math.ceil(self.num_samples / self.batch_size) if self.num_samples > 0 else 0
-
-        self.transformer = transformer
 
         logger.info(f"Loader initialized. Sessions: {len(target_sessions) if target_sessions else 'ALL'}, Samples: {self.num_samples}")
 
@@ -94,33 +91,31 @@ class BatchLoader:
             for i in batch_indices:
                 sample = self.samples[i]
 
-                img = cv2.imread(sample['path'])
-                if img is None:
-                    continue
+                # img = cv2.imread(sample['path'])
+                img_pil = Image.open(sample['path'])
+                img = np.array(img_pil)
 
                 steering = sample['steering']
                 throttle = sample['throttle']
                 # 左右をフリップ
                 if self.shuffle and random.random() > 0.5:
-                    img = cv2.flip(img, 1)
+                    img = np.fliplr(img)
                     steering = -steering
 
-                # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                # img = img.astype(np.float32) / 255.0
-                # img = img.transpose(2, 0, 1) # (H, W, C) -> (C, H, W)
-                transformed_img = self.transformer.transform_image(img)
-                s_norm, t_norm = self.transformer.normalize_labels(steering=steering, throttle=throttle)
+                normalized_img = normalize(img)
 
-                x_batch.append(transformed_img)
-                t_batch.append([s_norm, t_norm])
+                x_batch.append(normalized_img)
+                t_batch.append([steering, throttle])
 
             if not x_batch:
                 continue
 
             # リストをまとめて (N, C, H, W) のバッチに変換
-            images_tensor = self.transformer.prepare_batch_input(x_batch)
+            images_tensor = np.array(x_batch, dtype=np.float32)
+            labels_tensor = np.array(t_batch, dtype=np.float32)
+            images_nchw = images_tensor.transpose(0, 3, 1, 2)
 
             yield Batch(
-                images=images_tensor,
-                labels=np.array(t_batch).astype(np.float32)
+                images=images_nchw,
+                labels=labels_tensor
             )

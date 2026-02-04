@@ -3,7 +3,6 @@ from loader import BatchLoader
 from cnn.network import CarConvNet
 from cnn.optimizer import Adam, SGD, Optimizer
 from cnn.models import ModelConfig
-from cnn.transformer import DataTransformer
 from tqdm import tqdm, trange
 import logging
 from typing import Final
@@ -11,12 +10,11 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'session_1770198487',
-    'session_1770198509',
+    'data/session_1770213823',
 ]
 
 TEST_SESSIONS: Final = [
-    'session_1770198529',
+    'data/session_1770213823',
 ]
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -69,7 +67,6 @@ class Trainer:
             throttle_max = 1.0,
         )
 
-        self.tranformer = DataTransformer(config=config)
 
         train_sessions = [Path(s).name for s in TRAIN_SESSIONS]
         self.train_loader = BatchLoader(
@@ -77,7 +74,6 @@ class Trainer:
             target_sessions=train_sessions,
             batch_size=self.batch_size,
             shuffle=True,
-            transformer=self.tranformer,
         )
 
         test_sessions = [Path(s).name for s in TEST_SESSIONS]
@@ -86,7 +82,6 @@ class Trainer:
             target_sessions=test_sessions,
             batch_size=self.batch_size,
             shuffle=False,
-            transformer=self.tranformer,
         )
 
     def _init_network(self) -> None:
