@@ -3,7 +3,7 @@ import logging
 from adafruit_servokit import ServoKit
 
 
-SPEED_REDUCTION_RATIO: Final = 0.3
+SPEED_REDUCTION_RATIO: Final = 0.1
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
 STEERING_TRIM: Final = 0

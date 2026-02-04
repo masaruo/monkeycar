@@ -3,9 +3,10 @@ import time
 from pathlib import Path
 import csv
 import numpy as np
-import cv2
+# import cv2
 from cnn.models import DriveData
-from cnn.transformer import DataTransformer
+# from cnn.transformer import DataTransformer
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,8 @@ class Recorder:
         self.csv_path = self.session_dir / "records.csv"
         self._init_csv()
 
-        self.transformer = DataTransformer(image_size=(160, 120))
-        
+        # self.transformer = DataTransformer(image_size=(160, 120))
+
         logger.info(f"Recorder initialized: {self.session_id}")
 
     def _init_csv(self) -> None:
@@ -41,12 +42,7 @@ class Recorder:
 
         data = DriveData(timestamp=timestamp, steering=steering, throttle=throttle, image_name=image_name)
 
-        bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        
-        # Resize image before saving to save space
-        bgr_resized = self.transformer.resize_image(bgr)
-        
-        cv2.imwrite(str(image_path), bgr_resized)
+        Image.fromarray(frame).save(image_path)
 
         with open(self.csv_path, 'a', newline='') as f:
             writer = csv.writer(f)
