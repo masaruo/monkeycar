@@ -39,7 +39,7 @@ def main():
     prev_x_pressed: bool = False
     prev_b_pressed = False
 
-    with Joystick() as js, Motor() as motor, Camera() as cam:
+    with Joystick(max_throttle=0.2, steering_scale=1, deadzone=0.01) as js, Motor() as motor, Camera() as cam:
         try:
             while True:
                 js.poll()

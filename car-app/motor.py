@@ -3,10 +3,9 @@ import logging
 from adafruit_servokit import ServoKit
 
 
-SPEED_REDUCTION_RATIO: Final = 0.1
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
-STEERING_TRIM: Final = 0
+STEERING_TRIM: Final = -1
 STEERING_CENTER: Final = 90 + STEERING_TRIM
 MAX_LEFT: Final = 30
 MAX_RIGHT: Final = 30
@@ -14,13 +13,6 @@ MAX_RIGHT: Final = 30
 logger = logging.getLogger(__name__)
 
 class Motor:
-    """Controls motor throttle and steering for the vehicle.
-    
-    Manages ESC (Electronic Speed Controller) and steering servo.
-    Throttle range: 0 (stop) to MAX_SPEED (forward only, no reverse)
-    Steering range: -MAX_LEFT to +MAX_RIGHT degrees from center
-    """
-    
     def __init__(self, deadzone: float = 0.1):
         try:
             kit = ServoKit(channels=16)
@@ -43,19 +35,8 @@ class Motor:
         """
         # 1. 入力を [-1.0, 1.0] に制限
         val = max(-1.0, min(1.0, raw_value))
-        
-        # 2. デッドゾーン判定 (停止位置 -1.0 からの距離で判定)
-        # 例: -0.95 未満なら完全に停止信号を送る
-        if val < (-1.0 + self._deadzone):
-            self._throttle.throttle = -1.0
-            return
+        self._throttle.throttle = val
 
-        # 3. リミッター(SPEED_REDUCTION_RATIO)を適用しつつスケーリング
-        # -1.0 を基点(0)として、そこからの「伸び」に比率を掛ける
-        # 計算式: 低速時の基点 + (入力値の幅 * 比率)
-        throttle = -1.0 + (val - (-1.0)) * SPEED_REDUCTION_RATIO
-        
-        self._throttle.throttle = max(-1.0, min(1.0, throttle))
 
     def steer(self, raw_value: float) -> None:
         # raw_value = -1.0 ~ 1.0
