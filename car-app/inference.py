@@ -54,8 +54,7 @@ class Inference:
 
         # バッチ次元を追加 (3, H, W) -> (1, 3, H, W)
         # batched = np.expand_dims(transposed, axis=0)
-
-        return batched
+        return self.transformer.prepare_inference_input(frame)
 
     def predict(self, frame: np.ndarray) -> tuple[float, float]:
         """画像からステアリングとスロットルを予測
