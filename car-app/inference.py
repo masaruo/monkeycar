@@ -19,18 +19,13 @@ class Inference:
             self.config = ModelConfig.model_validate_json(f.read())
 
         self.image_size = self.config.image_size
-        self.steering_min = self.config.steering_min
-        self.steering_max = self.config.steering_max
-        self.throttle_min = self.config.throttle_min
-        self.throttle_max = self.config.throttle_max
-
 
         # ConvNetworkの初期化
         # input_dim needs to be (C, H, W)
         # image_size is (W, H)
         input_dim = (3, self.image_size[1], self.image_size[0])
         self.net = CarConvNet(input_dim=input_dim)
-        
+
         # パラメータの読み込み
         self.net.load_params(str(self.params_path))
 
