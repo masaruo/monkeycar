@@ -13,7 +13,6 @@ class Inference:
     def __init__(self, base_dir: str) -> None:
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        # self.model_path = self.base_dir / "model.tflite"
         self.params_path = self.base_dir / "params.pkl" # パラメータファイルのパス
         self.config_path = self.base_dir / "config.json"
 
@@ -35,7 +34,6 @@ class Inference:
         self.net = CarConvNet(input_dim=input_dim)
         
         # パラメータの読み込み
-        logger.info(f"Loading params from {self.params_path}")
         self.net.load_params(str(self.params_path))
 
         logger.info("DeepConvNetwork initialized")
@@ -52,10 +50,10 @@ class Inference:
 
         # Transformerによる一括処理
         # (Resize -> Normalize -> CHW)
-        transposed = self.transformer.transform_image(frame)
+        # transposed = self.transformer.transform_image(frame)
 
         # バッチ次元を追加 (3, H, W) -> (1, 3, H, W)
-        batched = np.expand_dims(transposed, axis=0)
+        # batched = np.expand_dims(transposed, axis=0)
 
         return batched
 
@@ -82,9 +80,5 @@ class Inference:
 
         # 非正規化 (モデル出力[-1, 1] -> 物理値[min, max])
         steering, throttle = self.transformer.denormalize_labels(steering_norm, throttle_norm)
-
-        # 安全のためクリップ (物理的な可動範囲を超えないように)
-        steering = np.clip(steering_norm, self.steering_min, self.steering_max)
-        throttle = np.clip(throttle_norm, self.throttle_min, self.throttle_max)
 
         return steering, throttle

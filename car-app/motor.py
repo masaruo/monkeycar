@@ -3,10 +3,10 @@ import logging
 from adafruit_servokit import ServoKit
 
 
-SPEED_REDUCTION_RATIO: Final = 0.16
+SPEED_REDUCTION_RATIO: Final = 0.55
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
-STEERING_TRIM: Final = -10
+STEERING_TRIM: Final = -5
 STEERING_CENTER: Final = 90 + STEERING_TRIM
 MAX_LEFT: Final = 50
 MAX_RIGHT: Final = 50
@@ -27,7 +27,8 @@ class Motor:
             self._throttle = kit.continuous_servo[1]
             self._throttle.set_pulse_width_range(1000, 2000)
             self._steering = kit.servo[0]
-            self._steering.set_pulse_width_range(1000, 2000)
+            # self._steering.set_pulse_width_range(1000, 2000)
+            self._steering.set_pulse_width_range(500, 2500)
             self._steer_angle = self._steering.angle
             self._deadzone = deadzone
             self.__setup_esc()

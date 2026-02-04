@@ -12,6 +12,7 @@
 ```bash
 make install
 ```
+`uv venv --system-site-packages`がpicameraのために必要な模様
 
 ## 実行
 ```bash
