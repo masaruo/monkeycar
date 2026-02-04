@@ -50,8 +50,8 @@ class DataTransformer:
 
             return normalized_steering, normalized_throttle
         """
-        if not self.config:
-            return steering, throttle
+        # if not self.config:
+        #     return steering, throttle
 
         s_min, s_max = self.config.steering_min, self.config.steering_max
         t_min, t_max = self.config.throttle_min, self.config.throttle_max
@@ -69,8 +69,8 @@ class DataTransformer:
     def denormalize_labels(self, s_norm: float, t_norm: float) -> tuple[float, float]:
         """モデルの正規化出力を物理値に復元
         """
-        if not self.config:
-            return s_norm, t_norm
+        # if not self.config:
+        #     return s_norm, t_norm
 
         s_min, s_max = self.config.steering_min, self.config.steering_max
         t_min, t_max = self.config.throttle_min, self.config.throttle_max

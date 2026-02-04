@@ -3,6 +3,7 @@ from loader import BatchLoader
 from cnn.network import CarConvNet
 from cnn.optimizer import Adam, SGD, Optimizer
 from cnn.models import ModelConfig
+from cnn.transformer import DataTransformer
 from tqdm import tqdm, trange
 import logging
 from typing import Final
@@ -10,18 +11,14 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'data/session_1770177225',
-    'data/session_1770177245',
-    'data/session_1770177262',
-    'data/session_1770177296',
-    'data/session_1770177330',
-    'data/session_1770177361',
-    'data/session_1770177367',
-    'data/session_1770177385',
+    'data/session_1770192143',
+    'data/session_1770192180',
+    'data/session_1770192231',
+    'data/session_1770192277',
 ]
 
 TEST_SESSIONS: Final = [
-    'data/session_1770177417',
+    'data/session_1770192293',
 ]
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -66,12 +63,23 @@ class Trainer:
 
 
     def _prepare_data(self) -> None:
+        config = ModelConfig(
+            image_size=self.image_size,
+            steering_min = -1.0,
+            steering_max = 1.0,
+            throttle_min = 0.0,
+            throttle_max = 1.0,
+        )
+
+        self.tranformer = DataTransformer(config=config)
+
         train_sessions = [Path(s).name for s in TRAIN_SESSIONS]
         self.train_loader = BatchLoader(
             data_dir=self.data_dir,
             target_sessions=train_sessions,
             batch_size=self.batch_size,
-            shuffle=True
+            shuffle=True,
+            transformer=self.tranformer,
         )
 
         test_sessions = [Path(s).name for s in TEST_SESSIONS]
@@ -79,7 +87,8 @@ class Trainer:
             data_dir=self.data_dir,
             target_sessions=test_sessions,
             batch_size=self.batch_size,
-            shuffle=False
+            shuffle=False,
+            transformer=self.tranformer,
         )
 
     def _init_network(self) -> None:
@@ -173,9 +182,9 @@ class Trainer:
 
 if __name__ == "__main__":
     try:
-        # trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001, optimizer=Adam)
-        trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.01, optimizer=SGD)
-        trainer.train(epochs=100)
+        trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001, optimizer=Adam)
+        # trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.01, optimizer=SGD)
+        trainer.train(epochs=50)
         trainer.save_weights()
 
     except Exception as e:
