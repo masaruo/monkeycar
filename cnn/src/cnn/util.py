@@ -5,6 +5,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def normalize(image: np.ndarray) -> np.ndarray:
+    """
+    0-255の画像を0.0-1.0
+    """
+    return image.astype(np.float32) / 255.0
+
+
 def im2col(
     input_data: np.ndarray, filter_h: int, filter_w: int, stride: int = 1, pad: int = 0
 ) -> np.ndarray:
