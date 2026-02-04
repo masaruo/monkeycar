@@ -33,6 +33,8 @@ class DataTransformer:
         # 次元変換 (HWC) -> (CHW)
         transposed = normalized.transpose(2, 0, 1)
 
+        return transposed
+
     def resize_image(self, image: np.ndarray) -> np.ndarray:
         """Resize image to target size if necessary."""
         target_w, target_h = self.image_size
