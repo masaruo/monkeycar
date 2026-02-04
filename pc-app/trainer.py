@@ -11,14 +11,12 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'data/session_1770192143',
-    'data/session_1770192180',
-    'data/session_1770192231',
-    'data/session_1770192277',
+    'session_1770198487',
+    'session_1770198509',
 ]
 
 TEST_SESSIONS: Final = [
-    'data/session_1770192293',
+    'session_1770198529',
 ]
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()

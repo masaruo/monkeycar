@@ -61,8 +61,8 @@ class DataTransformer:
         s_norm = np.clip(s_norm, -1.0, 1.0)
 
         #スロットルの正規化 [t_min, t_max] -> [0, 1]
-        t_norm = (throttle - t_min) / (t_max - t_min)
-        t_norm = np.clip(t_norm, 0.0, 1.0)
+        t_norm = 2 * (throttle - t_min) / (t_max - t_min) - 1
+        t_norm = np.clip(t_norm, -1.0, 1.0)
 
         return s_norm, t_norm
 
@@ -79,10 +79,11 @@ class DataTransformer:
         steering = ((s_norm + 1) / 2) * (s_max - s_min) + s_min
 
         # Throttle: [0, 1] -> [min, max]
-        throttle = t_norm * (t_max - t_min) + t_min
+        throttle = ((t_norm + 1) / 2) * (t_max - t_min) + t_min
+        # throttle = t_norm * (t_max - t_min) + t_min
 
         s_clip = np.clip(steering, s_min, s_max)
-        t_clip = np.clip(throttle, t_max, t_min)
+        t_clip = np.clip(throttle, t_min, t_max)
 
         return s_clip, t_clip
 
