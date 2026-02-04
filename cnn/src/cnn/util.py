@@ -35,8 +35,8 @@ def im2col(
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)  # ???
 
     logger.debug(
-        f"[{__name__}.im2col] IN:{input_data.shape} "
-        f"OUT:{col.shape} (fh={filter_h}, fw={filter_w}, stride={stride}, pad={pad})"
+        f"im2col: ({N},{C},{H},{W}) -> col({N*out_h*out_w}, {C*filter_h*filter_w}) "
+        f"[fh:{filter_h} fw:{filter_w} stride:{stride} pad:{pad}]"
     )
 
     return col
@@ -72,8 +72,8 @@ def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
             img[:, :, y:y_max:stride, x:x_max:stride] += col[:, :, y, x, :, :]
     out = img[:, :, pad : H + pad, pad : W + pad]
     logger.debug(
-        f"[{__name__}.col2im] IN:{col.shape} "
-        f"OUT:{out.shape} (fh={filter_h}, fw={filter_w}, stride={stride}, pad={pad})"
+        f"col2im: dcol({col.shape[0]}, {col.shape[1]}) -> dx({N},{C},{H},{W}) "
+        f"[fh:{filter_h} fw:{filter_w} stride:{stride} pad:{pad}]"
     )
 
     return out

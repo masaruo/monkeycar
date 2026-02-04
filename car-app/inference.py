@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 from cnn.transformer import DataTransformer
 from cnn.models import ModelConfig
-from cnn.network import DeepConvNet
+from cnn.network import CarConvNet
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class Inference:
         # input_dim needs to be (C, H, W)
         # image_size is (W, H)
         input_dim = (3, self.image_size[1], self.image_size[0])
-        self.net = DeepConvNet(input_dim=input_dim)
+        self.net = CarConvNet(input_dim=input_dim)
         
         # パラメータの読み込み
         logger.info(f"Loading params from {self.params_path}")

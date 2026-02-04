@@ -1,6 +1,6 @@
 # ホストPC用 Makefile（uv）
 
-.PHONY: all train install clean fclean pull push lint lint-strict
+.PHONY: all train install debug clean fclean pull push lint lint-strict
 
 all: train
 
@@ -9,6 +9,9 @@ train:
 
 install:
 	uv sync
+
+debug:
+	LOG_LEVEL=DEBUG uv run python trainer.py
 
 clean:
 	rm -rf .pytest_cache .ruff_cache *.pyc .uv-cache .mypy_cache

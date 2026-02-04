@@ -168,7 +168,7 @@ if __name__ == "__main__":
     try:
         # trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001, optimizer=Adam)
         trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.01, optimizer=SGD)
-        trainer.train(epochs=1)
+        trainer.train(epochs=150)
         trainer.save_weights()
 
     except Exception as e:

@@ -92,7 +92,7 @@ class CarConvNet:
         return self.last_layer.forward(y, t)
 
     def gradient(self, x: np.ndarray, t: np.ndarray) -> None:
-        # 1. Foward
+        # 1. Forwardして、全ての層に重みやバイアスをつける
         self.loss(x, t)
 
         # 2. Backward
