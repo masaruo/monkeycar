@@ -18,16 +18,23 @@ class DataTransformer:
         self.config = config
         self.image_size = config.image_size if config else image_size
 
+    def transform_image(self, image: np.ndarray) -> np.ndarray:
+        """OpenCV形式(BGR, HWC)をモデル入力形式(RGB, CHW, 0.0-1.0)に変換。"""
+
+        # color BGR -> RGB
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # resize to (160, 120)
+        resized = self.resize_image(rgb)
+
+        # normalize:
+        normalized = resized.astype(np.float32) / 255.0
+
+        # 次元変換 (HWC) -> (CHW)
+        transposed = normalized.transpose(2, 0, 1)
+
     def resize_image(self, image: np.ndarray) -> np.ndarray:
-        """Resize image to target size if necessary.
-
-        Args:
-            image: Input image (H, W, C)
-
-        Returns:
-            Resized image (H, W, C)
-        """
-        # image_size is (Width, Height), shape is (Height, Width, Channel)
+        """Resize image to target size if necessary."""
         target_w, target_h = self.image_size
         current_h, current_w = image.shape[:2]
 
@@ -36,72 +43,70 @@ class DataTransformer:
 
         return cv2.resize(image, self.image_size)
 
-    def transform_image(self, image: np.ndarray) -> np.ndarray:
-        """Process image for model input (Resize -> Normalize -> CHW).
+    def normalize_labels(self, steering: float, throttle: float) -> tuple[float, float]:
+        """物理値をモデル用に正規化
 
-        Args:
-            image: Input image (H, W, C) BGR or RGB
-
-        Returns:
-            Processed array (C, H, W)
-        """
-        # 1. Resize if needed
-        resized = self.resize_image(image)
-
-        # 2. Normalize [0, 255] -> [0.0, 1.0]
-        normalized = resized.astype(np.float32) / 255.0
-
-        # 3. HWC -> CHW
-        transposed = normalized.transpose(2, 0, 1)
-
-        # Note: Batch dimension is NOT added here.
-        # loader.py expects (C, H, W) to append to list.
-        # interpreter.py will treat this as (C, H, W) and use expand_dims to make it (1, C, H, W).
-
-        return transposed
-
-    def normalize_labels(
-        self, steering: float | np.ndarray, throttle: float | np.ndarray
-    ) -> tuple[float | np.ndarray, float | np.ndarray]:
-        """Normalize physical values to model range.
-        Supports both single float and numpy array inputs.
+            return normalized_steering, normalized_throttle
         """
         if not self.config:
-            raise ValueError("ModelConfig is required for normalization")
+            return steering, throttle
 
-        s_min = self.config.steering_min
-        s_max = self.config.steering_max
-        t_min = self.config.throttle_min
-        t_max = self.config.throttle_max
+        s_min, s_max = self.config.steering_min, self.config.steering_max
+        t_min, t_max = self.config.throttle_min, self.config.throttle_max
 
-        # Steering: Map [min, max] -> [-1, 1]
+        #ステアリングの正規化 [s_min, s_max] -> [-1.0 ~ 1.0]
         s_norm = 2 * (steering - s_min) / (s_max - s_min) - 1
         s_norm = np.clip(s_norm, -1.0, 1.0)
 
-        # Throttle: Map [min, max] -> [0, 1]
+        #スロットルの正規化 [t_min, t_max] -> [0, 1]
         t_norm = (throttle - t_min) / (t_max - t_min)
         t_norm = np.clip(t_norm, 0.0, 1.0)
 
-        if isinstance(steering, float):
-            return float(s_norm), float(t_norm)
         return s_norm, t_norm
 
-    def denormalize_labels(
-        self, steering_norm: float, throttle_norm: float
-    ) -> tuple[float, float]:
-        """Convert model output back to physical values."""
+    def denormalize_labels(self, s_norm: float, t_norm: float) -> tuple[float, float]:
+        """モデルの正規化出力を物理値に復元
+        """
         if not self.config:
-            raise ValueError("ModelConfig is required for denormalization")
+            return s_norm, t_norm
 
-        s_min = self.config.steering_min
-        s_max = self.config.steering_max
-        t_min = self.config.throttle_min
-        t_max = self.config.throttle_max
+        s_min, s_max = self.config.steering_min, self.config.steering_max
+        t_min, t_max = self.config.throttle_min, self.config.throttle_max
 
         # Steering: [-1, 1] -> [min, max]
-        steering = ((steering_norm + 1) / 2) * (s_max - s_min) + s_min
+        steering = ((s_norm + 1) / 2) * (s_max - s_min) + s_min
 
         # Throttle: [0, 1] -> [min, max]
-        throttle = throttle_norm * (t_max - t_min) + t_min
+        throttle = t_norm * (t_max - t_min) + t_min
 
-        return float(steering), float(throttle)
+        s_clip = np.clip(steering, s_min, s_max)
+        t_clip = np.clip(throttle, t_max, t_min)
+
+        return s_clip, t_clip
+
+    def prepare_inference_input(self, image: np.ndarray) -> np.ndarray:
+        #推論：(H, W, C) -> (1, C, H, W)
+        transformed = self.transform_image(image=image)
+        batched = np.expand_dims(transformed, axis=0)
+        return (batched)
+
+    def prepare_batch_input(self, image_list: list[np.ndarray]) -> np.ndarray:
+        """
+        訓練用に画像リストを (N, C, H, W) 形式のバッチに変換する。
+        
+        Args:
+            image_list: transform_image 済みの (C, H, W) 配列のリスト
+        Returns:
+            (N, C, H, W) の4次元配列
+        """
+        if not image_list:
+            return np.array([], dtype=np.float32)
+        
+        # リストを結合して (N, C, H, W) を作成
+        batch = np.array(image_list)
+        
+        # バッチサイズが 1 の場合に次元が圧縮されるのを防ぎ、確実に 4 次元を保証する
+        if batch.ndim == 3:
+            batch = batch[np.newaxis, :, :, :]
+            
+        return batch.astype(np.float32)

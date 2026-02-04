@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 import pandas as pd
+from cnn.transformer import DataTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ class BatchLoader:
 
         self.num_samples = len(self.samples)
         self.steps_per_epoch = math.ceil(self.num_samples / self.batch_size) if self.num_samples > 0 else 0
+
+        self.transformer = DataTransformer()
 
         logger.info(f"Loader initialized. Sessions: {len(target_sessions) if target_sessions else 'ALL'}, Samples: {self.num_samples}")
 
@@ -101,17 +104,22 @@ class BatchLoader:
                     img = cv2.flip(img, 1)
                     steering = -steering
 
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img = img.astype(np.float32) / 255.0
-                img = img.transpose(2, 0, 1) # (H, W, C) -> (C, H, W)
+                # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                # img = img.astype(np.float32) / 255.0
+                # img = img.transpose(2, 0, 1) # (H, W, C) -> (C, H, W)
+                transformed_img = self.transformer.transform_image(img)
+                s_norm, t_norm = self.transformer.normalize_labels(steering=steering, throttle=throttle)
 
-                x_batch.append(img)
-                t_batch.append([steering, throttle])
+                x_batch.append(transformed_img)
+                t_batch.append([s_norm, t_norm])
 
             if not x_batch:
                 continue
 
+            # リストをまとめて (N, C, H, W) のバッチに変換
+            images_tensor = self.transformer.prepare_batch_input(x_batch)
+
             yield Batch(
-                images=np.array(x_batch),
+                images=images_tensor,
                 labels=np.array(t_batch).astype(np.float32)
             )
