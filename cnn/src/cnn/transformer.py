@@ -91,4 +91,22 @@ class DataTransformer:
         return (batched)
 
     def prepare_batch_input(self, image_list: list[np.ndarray]) -> np.ndarray:
+        """
+        訓練用に画像リストを (N, C, H, W) 形式のバッチに変換する。
         
+        Args:
+            image_list: transform_image 済みの (C, H, W) 配列のリスト
+        Returns:
+            (N, C, H, W) の4次元配列
+        """
+        if not image_list:
+            return np.array([], dtype=np.float32)
+        
+        # リストを結合して (N, C, H, W) を作成
+        batch = np.array(image_list)
+        
+        # バッチサイズが 1 の場合に次元が圧縮されるのを防ぎ、確実に 4 次元を保証する
+        if batch.ndim == 3:
+            batch = batch[np.newaxis, :, :, :]
+            
+        return batch.astype(np.float32)

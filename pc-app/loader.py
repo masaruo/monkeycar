@@ -116,7 +116,10 @@ class BatchLoader:
             if not x_batch:
                 continue
 
+            # リストをまとめて (N, C, H, W) のバッチに変換
+            images_tensor = self.transformer.prepare_batch_input(x_batch)
+
             yield Batch(
-                images=np.array(x_batch),
+                images=images_tensor,
                 labels=np.array(t_batch).astype(np.float32)
             )
