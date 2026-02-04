@@ -80,24 +80,3 @@ class Joystick:
             return bool(self.joystick.get_button(index))
         else:
             return False
-
-    def get_hat(self, index: int = 0):
-        if self.joystick:
-            self.poll()
-            return self.joystick.get_hat(index)
-        else:
-            return 0
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-    with Joystick() as js:
-        print("Reading joystick... Press Ctrl+C to exit.")
-        try:
-            while True:
-                steer = js.get_steering(axis_index=0)
-                throttle = js.get_throttle()
-                print(f"steer={steer:+.2f} throttle={throttle:.2f}", end='\r', flush=True)
-                time.sleep(0.05)
-        except KeyboardInterrupt:
-            print("\nExiting.")
-

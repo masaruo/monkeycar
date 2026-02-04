@@ -6,10 +6,10 @@ from adafruit_servokit import ServoKit
 SPEED_REDUCTION_RATIO: Final = 0.3
 STOP_SPEED: Final = -1.0
 THROTTLE_OFFSET: Final = 0.0
-STEERING_TRIM: Final = -5
+STEERING_TRIM: Final = 0
 STEERING_CENTER: Final = 90 + STEERING_TRIM
-MAX_LEFT: Final = 50
-MAX_RIGHT: Final = 50
+MAX_LEFT: Final = 30
+MAX_RIGHT: Final = 30
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class Motor:
         try:
             kit = ServoKit(channels=16)
             self._throttle = kit.continuous_servo[1]
-            self._throttle.set_pulse_width_range(1000, 2000)
+            self._throttle.set_pulse_width_range(1500, 2500)
             self._steering = kit.servo[0]
             # self._steering.set_pulse_width_range(1000, 2000)
             self._steering.set_pulse_width_range(500, 2500)
@@ -38,24 +38,34 @@ class Motor:
             raise
 
     def accelerate(self, raw_value: float) -> None:
-        # raw_value: -1.0 (stop) to +1.0 (full forward)
-        # Apply deadzone around stop point (-1.0)
-        normalized: float = (1 + raw_value) / 2 # 0.0 ~ 1.0
-        if normalized < self._deadzone:
-            throttle = 0.0 #! NO REVERSE
-        else:
-            throttle = normalized * SPEED_REDUCTION_RATIO
-        final_throttle = min(throttle, 1.0)
-        self._throttle.throttle = final_throttle
+        """
+        raw_value: -1.0 (停止) ～ 1.0 (全開)
+        """
+        # 1. 入力を [-1.0, 1.0] に制限
+        val = max(-1.0, min(1.0, raw_value))
+        
+        # 2. デッドゾーン判定 (停止位置 -1.0 からの距離で判定)
+        # 例: -0.95 未満なら完全に停止信号を送る
+        if val < (-1.0 + self._deadzone):
+            self._throttle.throttle = -1.0
+            return
 
-    
+        # 3. リミッター(SPEED_REDUCTION_RATIO)を適用しつつスケーリング
+        # -1.0 を基点(0)として、そこからの「伸び」に比率を掛ける
+        # 計算式: 低速時の基点 + (入力値の幅 * 比率)
+        throttle = -1.0 + (val - (-1.0)) * SPEED_REDUCTION_RATIO
+        
+        self._throttle.throttle = max(-1.0, min(1.0, throttle))
+
     def steer(self, raw_value: float) -> None:
         # raw_value = -1.0 ~ 1.0
-        if raw_value < 0:
-            angle = STEERING_CENTER + (raw_value * MAX_LEFT)
+        val = max(-1.0, min(1.0, raw_value))
+        if val < 0:
+            angle = STEERING_CENTER + (val * MAX_LEFT)
         else:
-            angle = STEERING_CENTER + (raw_value * MAX_RIGHT)
-        self._steering.angle = int(angle)
+            angle = STEERING_CENTER + (val * MAX_RIGHT)
+        final_angle = max(0, min(180, int(angle)))
+        self._steering.angle = final_angle
 
     def __setup_esc(self) -> None:
         logger.info("Setting Up ESC")
@@ -75,36 +85,15 @@ class Motor:
         return False
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    main_logger = logging.getLogger()
-    
-    print("\n=== TAMIYA ESC CALIBRATION (Correct Sequence) ===")
-    print("WARNING: TIRES MUST BE OFF THE GROUND")
-    print("1. Turn ESC OFF.")
-    print("2. Hold SET button and Turn ESC ON.")
-    print("3. Wait for LED to flash, then release SET button.")
-    print("================================================\n")
-
-    input(">> Press Enter when LED is flashing (Setup Mode)...")
-
     with Motor() as m:
-        # 【重要修正 2】 タミヤの正しい順番: ハイポイント -> ブレーキ -> ニュートラル
-        
-        # 1. HIGH POINT (Full Forward)
-        # キーボードで設定ボタンを押すまで信号を送り続ける
-        print("\n[STEP 1] Sending FULL FORWARD (1.0)...")
+        print("\n=== TAMIYA ESC CALIBRATION (-1.0 to 1.0 BASE) ===")
+        # STEP 1: 前進ハイポイント (RT全開)
+        print("\n[STEP 1] RTを全開(1.0)にしてEnter...")
         m._throttle.throttle = 1.0
-        input(">> Press ESC SET button once (LED changes). Then press Enter here...")
+        input(">> SETボタンを押し、Enter...")
 
-        # 2. BRAKE POINT (Full Reverse)
-        print("\n[STEP 2] Sending FULL BRAKE (-1.0)...")
-        m._throttle.throttle = -1.0
-        input(">> Press ESC SET button once (LED changes). Then press Enter here...")
-
-        # 3. NEUTRAL POINT
-        print("\n[STEP 3] Sending NEUTRAL (0.0)...")
-        m._throttle.throttle = 0.0
-        input(">> Press ESC SET button once (LED turns off/solid). Then press Enter here...")
-
-        print("\nDONE! Calibration finished.")
-        print("Please restart the ESC (Turn OFF, then ON).")
+        # STEP 2: バック端 (LTをダミーとして利用)
+        # 停止位置(-1.0)よりさらに低い値を送り、ここをバック端にする
+        print("\n[STEP 2] LTを全開にしてEnter (物理的に -2.0 を送信)...")
+        m._throttle.throttle = -1.0 
+        input(">> SETボタンを押し、Enter...")
