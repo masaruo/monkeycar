@@ -19,10 +19,11 @@ class Batch(NamedTuple):
 class BatchLoader:
     def __init__(
         self,
+        transformer: DataTransformer,
         data_dir: str | Path = "./data",
         target_sessions: Optional[List[str]] = None,
         batch_size: int = 32,
-        shuffle: bool = True
+        shuffle: bool = True,
         ) -> None:
 
         self.data_dir: Path = Path(data_dir).resolve()
@@ -37,7 +38,7 @@ class BatchLoader:
         self.num_samples = len(self.samples)
         self.steps_per_epoch = math.ceil(self.num_samples / self.batch_size) if self.num_samples > 0 else 0
 
-        self.transformer = DataTransformer()
+        self.transformer = transformer
 
         logger.info(f"Loader initialized. Sessions: {len(target_sessions) if target_sessions else 'ALL'}, Samples: {self.num_samples}")
 
