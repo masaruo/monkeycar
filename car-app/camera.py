@@ -7,7 +7,7 @@ from typing import Final
 
 
 ROTATE: Final = 2
-MASK_RATE: Final = 0.4
+MASK_RATE: Final = 0.45
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class Camera:
             raise RuntimeError("Failed to capture frame")
         frame = np.rot90(frame, ROTATE) #カメラの設置が逆さま
         mask_rate = int(self.height * MASK_RATE)
-        # frame[:mask_rate, :] = 0 #上端のマスク
+        frame[:mask_rate, :] = 0 #上端のマスク
 
         return frame
 

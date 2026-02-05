@@ -26,8 +26,6 @@ class Recorder:
         self.csv_path = self.session_dir / "records.csv"
         self._init_csv()
 
-        # self.transformer = DataTransformer(image_size=(160, 120))
-
         logger.info(f"Recorder initialized: {self.session_id}")
 
     def _init_csv(self) -> None:

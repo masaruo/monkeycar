@@ -18,7 +18,7 @@ LEFTSTICK: Final = 0
 
 logger = logging.getLogger(__name__)
 
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
 def main():
@@ -71,14 +71,13 @@ def main():
                     steer = js.get_steering(axis_index=LEFTSTICK)# -1.0～+1 .0
                     throttle = js.get_throttle(axis_index=RT)# -1.0~+1.0
 
-                # スケーリングは環境に合わせて調整
                 motor.steer(steer)
                 motor.accelerate(throttle)
 
                 if is_recording:
                     recorder.save(frame, steer, throttle)
 
-                logger.debug(f"steering:[{steer}] and throttle:[{throttle}]")
+                logger.info(f"steering:[{steer}] and throttle:[{throttle}]")
                 time.sleep(0.02)
         except KeyboardInterrupt:
             logger.info("Finish main loop")

@@ -68,6 +68,24 @@ class Joystick:
         else:
             return -1.0
 
+    def get_throttle(self, axis_index: int = 5) -> float:
+        """
+        コントローラーの入力を取得し、0.0(停止) ～ 1.0(最大前進) に変換する。
+        軸インデックスは環境に合わせて調整すること（通常は 5 または 2）。
+        """
+        if self.joystick:
+            # 生の値を取得 (通常は離すと -1.0, 押し込むと 1.0)
+            raw_val = self.get_axis(axis_index)
+            
+            # [-1.0, 1.0] -> [0.0, 1.0] への線形変換
+            # これをこのシステムにおける「Rawスロットル」として扱う
+            throttle = (raw_val + 1.0) / 2.0
+            
+            # 浮動小数点の誤差や微小な入力を防ぐためのガード
+            return max(0.0, min(1.0, throttle))
+            
+        return 0.0
+
     def get_button(self, index: int) -> bool:
         if self.joystick:
             self.poll()
