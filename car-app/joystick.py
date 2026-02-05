@@ -10,14 +10,11 @@ logger = logging.getLogger(__name__)
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 class Joystick:
-    def __init__(self, max_throttle: float, steering_scale: float, deadzone: float):
+    def __init__(self):
         pygame.init()
         pygame.joystick.init()
 
         self.joystick = None
-        self._max_throttle = max_throttle
-        self._steering_scale = steering_scale
-        self._deadzone = deadzone
 
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
@@ -47,23 +44,15 @@ class Joystick:
         if self.joystick:
             pygame.event.pump()
 
-    @staticmethod
-    def _apply_deadzone(value: float, deadzone: float) -> float:
-        return 0.0 if abs(value) < deadzone else value
-
     def get_axis(self, index: int) -> float:
         """Return axis value in [-1.0, 1.0] with deadzone applied."""
         self.poll()
-        raw = self.joystick.get_axis(index)
-        return self._apply_deadzone(raw, self._deadzone)
+        return float(self.joystick.get_axis(index))
 
     def get_steering(self, axis_index: int = 0) -> float:
         """Horizontal stick axis in [-1.0, 1.0]; left negative, right positive."""
         if self.joystick:
-            val = self.get_axis(axis_index)
-            val = val ** 3 #3乗して、滑らかにする
-            val = val * self._steering_scale
-            return max(-1.0, min(1.0, val))
+            return self.get_axis(axis_index)
         else:
             return 0.0
 
@@ -75,10 +64,7 @@ class Joystick:
         """
         if self.joystick:
             val = self.get_axis(axis_index)
-            val = max(-1.0, min(1.0, val))
-            processed_throttle = -1.0 + (val - (-1.0)) * self._max_throttle
-            processed_throttle = max(-1.0, min(1.0, processed_throttle))
-            return processed_throttle
+            return max(-1.0, min(1.0, val))
         else:
             return -1.0
 

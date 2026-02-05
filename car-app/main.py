@@ -18,7 +18,7 @@ LEFTSTICK: Final = 0
 
 logger = logging.getLogger(__name__)
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s")
 
 
 def main():
@@ -27,9 +27,8 @@ def main():
     parser.add_argument("--record", action='store_true')
     args = parser.parse_args()
 
-    # recorder = Recorder(base_dir="data")
     try:
-        pilot = Inference("./output")
+        pilot = Inference("./active_model")
     except Exception:
         pilot = None
 
@@ -39,7 +38,7 @@ def main():
     prev_x_pressed: bool = False
     prev_b_pressed = False
 
-    with Joystick(max_throttle=0.2, steering_scale=1, deadzone=0.01) as js, Motor() as motor, Camera() as cam:
+    with Joystick() as js, Motor() as motor, Camera() as cam:
         try:
             while True:
                 js.poll()

@@ -7,6 +7,7 @@ from typing import Final
 
 
 ROTATE: Final = 2
+MASK_RATE: Final = 0.4
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,8 @@ class Camera:
 
     def __init__(self, width: int=160, height: int=120, fps: int = 30) -> None:
         self.picam2 = Picamera2()
+        self.width = width
+        self.height = height
         config = self.picam2.create_video_configuration(
             main={
                 "size": (width, height), 
@@ -33,7 +36,8 @@ class Camera:
         if frame is None:
             raise RuntimeError("Failed to capture frame")
         frame = np.rot90(frame, ROTATE) #カメラの設置が逆さま
-        # frame[:120, :] = 0 #todo 上端のマスク
+        mask_rate = int(self.height * MASK_RATE)
+        # frame[:mask_rate, :] = 0 #上端のマスク
 
         return frame
 
