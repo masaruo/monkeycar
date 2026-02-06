@@ -4,7 +4,7 @@ from adafruit_servokit import ServoKit
 
 SPPED_REDUCTION_RATIO: Final = 0.5 #! MO DO NOT CHANGE
 DEAD_ZONE: Final = 0.01
-PHISICAL_START_SPEED = 0.03
+PHISICAL_START_SPEED = 0.10
 STOP_SPEED: Final = 0.0
 
 STEERING_TRIM: Final = -15
