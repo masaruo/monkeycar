@@ -10,11 +10,9 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'data/session_1770213823',
 ]
 
 TEST_SESSIONS: Final = [
-    'data/session_1770213823',
 ]
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -168,7 +166,7 @@ if __name__ == "__main__":
     try:
         trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.0001, optimizer=Adam)
         # trainer = Trainer(data_dir="./data", batch_size=32, learning_rate=0.01, optimizer=SGD)
-        trainer.train(epochs=50)
+        trainer.train(epochs=20)
         trainer.save_weights()
 
     except Exception as e:

@@ -91,7 +91,6 @@ class BatchLoader:
             for i in batch_indices:
                 sample = self.samples[i]
 
-                # img = cv2.imread(sample['path'])
                 img_pil = Image.open(sample['path'])
                 img = np.array(img_pil)
 
