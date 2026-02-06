@@ -8,6 +8,7 @@ from .layers import (
     Flatten,
     MeanSquaredError,
     Dropout,
+    Tanh,
 )
 import pickle
 from typing import Union
@@ -72,6 +73,7 @@ class CarConvNet:
             Relu(),
             Dropout(0.5),
             Affine(input_size=hidden_size, output_size=output_size, name="Affine2"),
+            # Tanh()
         ]
         self.layers = self.Convlayers + self.AffineLayers
         self.last_layer = MeanSquaredError()

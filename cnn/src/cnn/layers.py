@@ -346,3 +346,17 @@ class Dropout(Layer):
     @log_shapes
     def backward(self, dout: np.ndarray) -> np.ndarray:
         return dout * self.mask
+
+class Tanh(Layer):
+    def __init__(self):
+        self.out = None
+
+    def forward(self, x):
+        out = np.tanh(x)
+        self.out = out
+        return out
+
+    def backward(self, dout):
+        # tanh(x) の微分は (1 - tanh^2(x))
+        dx = dout * (1.0 - self.out ** 2)
+        return dx
