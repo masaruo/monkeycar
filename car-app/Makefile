@@ -18,6 +18,7 @@ install:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
+	rm -rf .mypy_cache .ruff_cache
 
 fclean: clean
 	rm -rf .venv

@@ -4,6 +4,8 @@ from pathlib import Path
 from cnn.models import ModelConfig
 from cnn.network import CarConvNet
 from cnn.util import normalize
+from typing import Final
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class Inference:
     def predict(self, frame: np.ndarray) -> tuple[float, float]:
         #　前処理
         normalized_img = normalize(frame)
-        
+
         # shape (h, w, c) -> (c, h, w)
         transposed = normalized_img.transpose(2, 0, 1)
         # add mock batch = 1
@@ -43,4 +45,5 @@ class Inference:
         predictions = self.net.predict(batched)
         result = predictions[0]
         steering, throttle = result
+
         return steering, throttle
