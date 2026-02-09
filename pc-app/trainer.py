@@ -10,18 +10,11 @@ from pathlib import Path
 
 
 TRAIN_SESSIONS: Final = [
-    'data/session_1770345696',
-    'data/session_1770345941',
-    'data/session_1770349115',
-    'data/session_1770349469',
-    'data/session_1770349987',
-    'data/session_1770350488',
-    'data/session_1770350530',
+    'data/session_1770606572',
 ]
 
 TEST_SESSIONS: Final = [
-    'data/session_1770345820',
-    'data/session_1770349253',
+    'data/session_1770606739',
 ]
 
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -102,7 +95,7 @@ class Trainer:
             loss_sum = 0.0
             count = 0
 
-            batch_bar = tqdm(self.test_loader, leave=False, desc=f"{epoch+1}")
+            batch_bar = tqdm(self.train_loader, leave=False, desc=f"{epoch+1}")
             for batch in batch_bar:
                 self.network.gradient(batch.images, batch.labels)
                 self.optimizer.update(self.network.params())
