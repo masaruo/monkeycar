@@ -390,10 +390,10 @@ class Convolution(Layer):
             np.ndarray: 入力側への誤差勾配
         """
         FN, C, FH, FW = self.W.data.shape
-        # (N,C,OH,OW)->(N,OH,OW,FN)->(N*OH*OW,FN)
+        # (N,FN,OH,OW)->(N,OH,OW,FN)->(N*OH*OW,FN)
         dout = dout.transpose(0, 2, 3, 1).reshape(-1, FN)
 
-        # Check affine
+        # Check affine backward comment
         self.b.grad = np.sum(dout, axis=0)
 
         # (C*FH*FW, N*OH*OW) dot (N*OH*OW, FN) -> (C*FH*FW, FN)
