@@ -1,3 +1,8 @@
+# This file contains code derived from "Deep Learning from Scratch"
+# Copyright (c) 2016 Koki Saitoh
+# Released under the MIT license
+# https://github.com/oreilly-japan/deep-learning-from-scratch
+
 import numpy as np
 import logging
 
