@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class CarConvNet:
     """
-    3層の畳み込み層を持つCNN (Parameterクラス対応版)
+    3層の畳み込み層を持つCNN
     構成: Conv -> Relu -> Pool (x3) -> Flatten -> Affine -> Relu -> Dropout -> Affine -> MSE
     """
 
