@@ -13,7 +13,7 @@
 **初回のみ実施**（既に設定済みの場合はスキップ可能）
 
 ### 1. OS インストール
-- **Raspberry Pi Imager** でラズパイに Raspberry Pi OS (Bookworm) をインストール
+- **Raspberry Pi Imager** でラズパイに Raspberry Pi OS (other) -> Raspberry Pi OS (Legacy, 64-bit) `A port of Debian Bookworm with security updates and desktop environment` 1.2GB をインストール
 - ホスト名、ユーザー情報、SSH 設定などを事前に入力
 
 ### 2. Docker Engine インストール
