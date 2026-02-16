@@ -60,6 +60,7 @@ git clone git@github.com:masaruo/monkeycar.git
 ### 1. ホストOS初期設定
 ```bash
 cd ./monkeycar/car-app/
+chmod +x ./setup.sh
 ./setup.sh
 ```
 以下を実施：
