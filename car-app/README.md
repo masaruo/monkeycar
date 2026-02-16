@@ -52,6 +52,7 @@ sudo raspi-config
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y git vim curl
+git clone git@github.com:masaruo/monkeycar.git
 ```
 
 ## セットアップ
