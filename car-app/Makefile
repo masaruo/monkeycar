@@ -1,4 +1,4 @@
-.PHONY: all run autopilot record install clean calibrate shell build down
+.PHONY: all run autopilot record install clean calibrate shell build down fclean lint
 
 # Service name defined in docker-compose.yml
 SERVICE_NAME = monkeycar
