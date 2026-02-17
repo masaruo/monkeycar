@@ -41,11 +41,8 @@ COPY car-app ./car-app
 
 WORKDIR /monkeycar/car-app
 
-# COPY car-app/pyproject.toml car-app/uv.lock ./
-
 # uv のインストール
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-#COPY pyproject.toml .
 
 # システムの libcamera を利用するため --system-site-packages 相当の設定で同期
 RUN uv venv --system-site-packages
