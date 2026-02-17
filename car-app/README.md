@@ -109,7 +109,7 @@ make shell
 ### Dockerfile
 - ベース: `python:3.11-slim-bookworm`（ラズパイOS と同じ Bookworm）
 - `libcamera` + SDL2 依存ライブラリをインストール
-- `uv` で Python 依存を管理実行時は `uv run python main.py` をエントリーポイント
+- `uv` で Python 依存を管理。実行時は `uv run python main.py` をエントリーポイント
 
 ### docker-compose.yaml
 - **privileged モード** : GPIO / I2C / カメラへの全アクセス権限を許可
