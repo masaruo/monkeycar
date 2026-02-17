@@ -1,6 +1,9 @@
 services:
   monkeycar:
     build:
+      # NOTE: Run `docker compose` from the `car-app` directory so that:
+      #   - `context: ..` points to the project root (parent directory)
+      #   - `dockerfile: car-app/Dockerfile` resolves correctly within that context
       context: ..
       dockerfile: car-app/Dockerfile
     container_name: monkeycar_app
