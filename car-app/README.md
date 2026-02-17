@@ -115,9 +115,9 @@ make shell
 - **privileged モード** : GPIO / I2C / カメラへの全アクセス権限を許可
 - **host ネットワーク** : ホストと同一ネットワーク（ジョイスティックなど）
 - **ボリュームマウント** :
-  - `.:/app` : ソースコード（変更即反映）
-  - `./data:/app/data` : 記録データの永続化
-  - `./output:/app/output` : 推論結果の永続化
+  - `.:/monkeycar/car-app` : ソースコード（変更即反映）
+  - `./data:/monkeycar/car-app/data` : 記録データの永続化
+  - `./output:/monkeycar/car-app/output` : 推論結果の永続化
 - **デバイス指定** :
   - `/dev/video0` : カメラ
   - `/dev/i2c-1` : サーボ制御（ServoKit）
