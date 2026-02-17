@@ -1,0 +1,39 @@
+services:
+  monkeycar:
+    build:
+      # NOTE: Run `docker compose` from the `car-app` directory so that:
+      #   - `context: ..` points to the project root (parent directory)
+      #   - `dockerfile: car-app/Dockerfile` resolves correctly within that context
+      context: ..
+      dockerfile: car-app/Dockerfile
+    container_name: monkeycar_app
+    
+    # 【重要】ラズパイのハードウェア(GPIO, I2C, Camera)への全アクセス権限
+    privileged: true
+    network_mode: "host"
+
+    # ソースコードをマウント（ホスト側の変更を即反映させるため）
+    volumes:
+      - .:/monkeycar/car-app
+      - /monkeycar/car-app/.venv
+      # データの保存先もマウント（録画データなどをホストに残す）
+      - ./data:/monkeycar/car-app/data
+      - ./output:/monkeycar/car-app/output
+      - /dev:/dev
+      - /run/udev:/run/udev:ro
+
+    # デバイスの明示的指定（privileged: trueなら省略可能な場合もあるが、書くのが作法）
+    # devices:
+    #   - "/dev/video0:/dev/video0"
+    #   - "/dev/i2c-1:/dev/i2c-1"
+    #   - "/dev/input:/dev/input"
+
+    # 環境変数（Pythonの出力バッファリングを無効化）
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/usr/lib/python3/dist-packages
+    
+    # -------------------------------------------------------
+    # ここが Makefile の "run" に相当
+    # -------------------------------------------------------
+    command: uv run python main.py
